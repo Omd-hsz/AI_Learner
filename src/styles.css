@@ -1,0 +1,254 @@
+/* src/styles.css
+   ---------------------------------------------------------------------------
+   Global styles. One plain CSS file (no Tailwind/CSS-in-JS) keeps the project
+   approachable for a beginner: everything visual is in this one place.
+   We use CSS variables for the color palette so theming is easy.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --bg: #0f172a;            /* page background (slate-900) */
+  --bg-soft: #1e293b;       /* cards / panels (slate-800) */
+  --bg-soft2: #334155;      /* hover / borders (slate-700) */
+  --text: #e2e8f0;          /* main text (slate-200) */
+  --muted: #94a3b8;         /* secondary text (slate-400) */
+  --accent: #6366f1;        /* indigo-500 */
+  --accent-2: #0ea5e9;      /* sky-500 */
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --radius: 14px;
+  --maxw: 860px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+}
+
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+
+/* --- Layout --------------------------------------------------------------- */
+.app { min-height: 100vh; }
+
+.nav {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 12px 18px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--bg-soft2);
+}
+.brand {
+  background: none; border: none; color: var(--text);
+  font-size: 1.05rem; font-weight: 700;
+}
+.nav-links { display: flex; gap: 6px; align-items: center; }
+.nav-link {
+  background: none; border: 1px solid transparent; color: var(--muted);
+  padding: 6px 12px; border-radius: 999px; font-size: 0.92rem;
+}
+.nav-link:hover { color: var(--text); background: var(--bg-soft); }
+.nav-link.active { color: #fff; background: var(--accent); }
+
+.main { max-width: var(--maxw); margin: 0 auto; padding: 22px 18px 80px; }
+
+.key-banner {
+  max-width: var(--maxw); margin: 12px auto 0; cursor: pointer;
+  background: rgba(245, 158, 11, 0.12); border: 1px solid var(--amber);
+  color: #fde68a; padding: 10px 16px; border-radius: 10px; font-size: 0.9rem;
+}
+
+/* --- Generic helpers ------------------------------------------------------ */
+.muted { color: var(--muted); }
+.small { font-size: 0.82rem; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.error {
+  background: rgba(239, 68, 68, 0.12); border: 1px solid var(--red);
+  color: #fecaca; padding: 10px 14px; border-radius: 10px; margin: 12px 0;
+}
+.warn { color: #fcd34d; font-size: 0.9rem; }
+.status-line { margin-top: 14px; color: var(--muted); }
+
+/* --- Buttons -------------------------------------------------------------- */
+.btn, .btn-primary, .btn-ghost, .btn-danger {
+  border-radius: 10px; padding: 9px 14px; font-size: 0.92rem; border: 1px solid var(--bg-soft2);
+  background: var(--bg-soft); color: var(--text); transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: var(--bg-soft2); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: #4f46e5; }
+.btn-primary:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--text); }
+.btn-danger { border-color: var(--red); color: #fca5a5; }
+.btn-danger:hover { background: rgba(239,68,68,0.15); }
+
+/* --- Progress bar --------------------------------------------------------- */
+.progress { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.progress-track {
+  flex: 1; height: 9px; background: var(--bg-soft2);
+  border-radius: 999px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 999px; transition: width 0.3s ease;
+}
+.progress-label { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+
+/* --- Home / curriculum ---------------------------------------------------- */
+.home-head h1 { margin: 0 0 8px; font-size: 1.6rem; }
+.due-banner {
+  margin-top: 12px; background: var(--bg-soft); border: 1px solid var(--bg-soft2);
+  padding: 10px 14px; border-radius: 10px; font-size: 0.92rem;
+}
+
+.module {
+  margin-top: 22px; padding: 16px; border-radius: var(--radius);
+  background: var(--bg-soft); border: 1px solid var(--bg-soft2);
+  border-left: 5px solid var(--accent);
+}
+/* Module accent colours, matched to curriculum.json "color". */
+.module-blue   { border-left-color: #3b82f6; }
+.module-green  { border-left-color: #22c55e; }
+.module-yellow { border-left-color: #eab308; }
+.module-orange { border-left-color: #f97316; }
+.module-red    { border-left-color: #ef4444; }
+.module-purple { border-left-color: #a855f7; }
+
+.module-head h2 { margin: 0 0 6px; font-size: 1.12rem; }
+.topic-list { list-style: none; margin: 12px 0 0; padding: 0; }
+.topic-row {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  background: var(--bg); border: 1px solid var(--bg-soft2); color: var(--text);
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 8px;
+}
+.topic-row:hover { border-color: var(--accent); }
+.topic-id { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 34px; font-size: 0.85rem; }
+.topic-title { flex: 1; }
+.foundation-tag { color: var(--accent-2); font-weight: 700; margin-left: 6px; }
+
+/* --- Badges --------------------------------------------------------------- */
+.badge {
+  font-size: 0.74rem; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.badge-grey  { background: var(--bg-soft2); color: var(--muted); }
+.badge-amber { background: rgba(245,158,11,0.15); color: #fcd34d; border-color: var(--amber); }
+.badge-green { background: rgba(34,197,94,0.15); color: #86efac; border-color: var(--green); }
+
+/* --- Lesson --------------------------------------------------------------- */
+.lesson-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.lesson-title { font-size: 1.4rem; margin: 6px 0 14px; }
+.empty-lesson { text-align: center; padding: 40px 0; }
+
+.lesson-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 10px; }
+
+.streaming-note { color: var(--muted); display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+
+.ask-form { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.ask-form label { font-weight: 600; font-size: 0.92rem; }
+.ask-form input, .ask-form textarea, .settings input, .settings select, .settings textarea {
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--bg-soft2); color: var(--text);
+}
+.ask-form .row input { flex: 1; }
+.teachback textarea { resize: vertical; }
+
+/* --- Conversation thread -------------------------------------------------- */
+.thread { margin-top: 24px; border-top: 1px solid var(--bg-soft2); padding-top: 12px; }
+.bubble { padding: 10px 14px; border-radius: 12px; margin: 10px 0; }
+.bubble-user { background: var(--bg-soft); border: 1px solid var(--bg-soft2); }
+.bubble-assistant { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.3); }
+.bubble-role { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* --- Flashcards / Quiz cards ---------------------------------------------- */
+.card {
+  background: var(--bg-soft); border: 1px solid var(--bg-soft2);
+  border-radius: var(--radius); padding: 22px; margin-top: 16px;
+}
+.card-source { color: var(--muted); font-size: 0.8rem; margin-bottom: 10px; }
+.card-q { font-size: 1.2rem; font-weight: 600; }
+.card-a { font-size: 1.05rem; }
+.card-actions { display: flex; gap: 10px; margin-top: 16px; }
+.reveal { margin-top: 18px; }
+.card-progress { margin-top: 14px; }
+
+.quiz-q { font-size: 1.15rem; font-weight: 600; margin: 8px 0 14px; }
+.choices { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.choice {
+  width: 100%; text-align: left; padding: 11px 14px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--bg-soft2); color: var(--text);
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); }
+.choice-correct { border-color: var(--green); background: rgba(34,197,94,0.15); }
+.choice-wrong { border-color: var(--red); background: rgba(239,68,68,0.15); }
+.explanation { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bg-soft2); }
+.quiz-history { margin-top: 26px; }
+.quiz-history ul { padding-left: 18px; color: var(--muted); }
+
+/* --- Settings ------------------------------------------------------------- */
+.setting-block {
+  margin-top: 20px; padding: 16px; border-radius: var(--radius);
+  background: var(--bg-soft); border: 1px solid var(--bg-soft2);
+}
+.setting-block h2 { margin: 0 0 10px; font-size: 1.1rem; }
+.setting-block label { display: block; margin: 12px 0 5px; font-size: 0.88rem; color: var(--muted); }
+.file-label { display: inline-flex; align-items: center; }
+
+/* --- Modal ---------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; padding: 18px; z-index: 50;
+}
+.modal {
+  background: var(--bg-soft); border: 1px solid var(--bg-soft2);
+  border-radius: var(--radius); padding: 24px; max-width: 460px; width: 100%;
+}
+.modal h2 { margin-top: 0; }
+.modal input { width: 100%; padding: 11px 12px; border-radius: 10px; margin: 12px 0;
+  background: var(--bg); border: 1px solid var(--bg-soft2); color: var(--text); }
+.modal .row { justify-content: flex-end; }
+
+/* --- Spinner -------------------------------------------------------------- */
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--bg-soft2); border-top-color: var(--accent);
+  display: inline-block; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Rendered markdown (lesson body) -------------------------------------- */
+.markdown h1, .markdown h2, .markdown h3 { line-height: 1.3; margin-top: 1.4em; }
+.markdown h1 { font-size: 1.4rem; }
+.markdown h2 { font-size: 1.2rem; color: #c7d2fe; }
+.markdown h3 { font-size: 1.05rem; color: #a5b4fc; }
+.markdown p { margin: 0.7em 0; }
+.markdown code {
+  background: var(--bg); border: 1px solid var(--bg-soft2);
+  padding: 1px 6px; border-radius: 6px; font-size: 0.9em;
+}
+.markdown pre {
+  background: #0b1220; border: 1px solid var(--bg-soft2);
+  padding: 14px; border-radius: 10px; overflow-x: auto;
+}
+.markdown pre code { background: none; border: none; padding: 0; }
+.markdown blockquote {
+  border-left: 3px solid var(--accent); margin: 1em 0; padding: 2px 14px; color: var(--muted);
+}
+.markdown table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+.markdown th, .markdown td { border: 1px solid var(--bg-soft2); padding: 7px 10px; text-align: left; }
+.markdown ul, .markdown ol { padding-left: 22px; }
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 560px) {
+  .nav { flex-direction: column; gap: 8px; align-items: stretch; }
+  .nav-links { justify-content: center; }
+  .lesson-title { font-size: 1.2rem; }
+}

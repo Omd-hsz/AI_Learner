@@ -1,0 +1,64 @@
+# .github/workflows/deploy.yml
+# -----------------------------------------------------------------------------
+# Automatically builds the app and publishes it to GitHub Pages whenever you push
+# to the `main` branch. This is the "no manual steps" deploy path.
+#
+# ONE-TIME SETUP in your GitHub repo:
+#   Settings -> Pages -> "Build and deployment" -> Source: "GitHub Actions".
+#
+# IMPORTANT: the app's base path must match your repo name. This workflow sets
+# GHPAGES_BASE automatically from the repository name (see the build step), so
+# you usually don't need to edit vite.config.js. If you use a custom domain or a
+# user/organization site (username.github.io), set GHPAGES_BASE to "/".
+# -----------------------------------------------------------------------------
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Allows manual runs from the Actions tab.
+  workflow_dispatch:
+
+# Permissions the GitHub Pages deployment needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; cancel older in-progress runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Set the base path to "/<repo-name>/" from the repository name.
+      - name: Build
+        run: npm run build
+        env:
+          GHPAGES_BASE: /${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
