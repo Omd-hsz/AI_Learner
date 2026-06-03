@@ -255,14 +255,14 @@ export default function Lesson({ topic, hasKey, onNeedKey, onBack, onChanged }) 
         {topic.foundation && <span className="foundation-tag"> ∑ foundation</span>}
       </h1>
 
-      {error && <div className="error">⚠ {error}</div>}
+      {error && <div className="error">{error}</div>}
 
       {/* If there's nothing cached and we haven't generated, offer a button. */}
       {!hasLesson && !busy && (
         <div className="empty-lesson">
           <p className="muted">No lesson cached yet for this topic.</p>
           <button className="btn-primary" onClick={() => runGeneration(false)}>
-            ✨ Generate lesson
+            Generate lesson
           </button>
         </div>
       )}
@@ -299,17 +299,17 @@ export default function Lesson({ topic, hasKey, onNeedKey, onBack, onChanged }) 
         <>
           <div className="lesson-actions">
             <button className="btn" onClick={() => runGeneration(true)}>
-              🔄 Regenerate
+              Regenerate
             </button>
             <button
               className="btn"
               onClick={handleComplete}
               disabled={status === STATUS.COMPLETED}
             >
-              ✓ Mark complete
+              Mark complete
             </button>
             <button className="btn" onClick={handleStuck}>
-              🆘 I'm stuck
+              I'm stuck
             </button>
           </div>
 

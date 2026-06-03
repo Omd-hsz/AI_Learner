@@ -68,7 +68,7 @@ export default function App() {
       {/* Top navigation bar, always visible. */}
       <nav className="nav">
         <button className="brand" onClick={() => setView('home')}>
-          🧠 AI Learning Companion
+          AI Learning Companion
         </button>
         <div className="nav-links">
           <button className={navCls(view, 'home')} onClick={() => setView('home')}>
@@ -81,7 +81,7 @@ export default function App() {
             Quiz
           </button>
           <button className={navCls(view, 'settings')} onClick={() => setView('settings')}>
-            ⚙
+            Settings
           </button>
         </div>
       </nav>
@@ -157,11 +157,12 @@ function KeyPrompt({ onSave, onSkip }) {
   return (
     <div className="modal-backdrop">
       <div className="modal">
-        <h2>Add your AI API key</h2>
+        <h2>Add your LiteLLM key</h2>
         <p>
           This app runs entirely in your browser and has no server. To generate
-          lessons it calls an LLM provider directly using <em>your</em> key, which
-          is stored only on this device.
+          lessons it calls the Divar LiteLLM gateway (
+          <code>litellm.data.divar.cloud</code>) using <em>your</em> team key,
+          stored only on this device.
         </p>
         <p className="warn">
           ⚠ Use a key with a <strong>low spending cap</strong> so a mistake can't
@@ -171,7 +172,7 @@ function KeyPrompt({ onSave, onSkip }) {
           type="password"
           value={key}
           onChange={(e) => setKey(e.target.value)}
-          placeholder="Paste your API key…"
+          placeholder="Paste your LiteLLM key (sk-…)"
           autoFocus
         />
         <div className="row">

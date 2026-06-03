@@ -68,7 +68,7 @@ export default function Flashcards({ curriculum, onBack, onChanged }) {
       )}
 
       {cards.length > 0 && due.length === 0 && (
-        <p className="muted">🎉 Nothing due right now. Come back later!</p>
+        <p className="muted">Nothing due right now. Come back later.</p>
       )}
 
       {current && (
@@ -83,10 +83,10 @@ export default function Flashcards({ curriculum, onBack, onChanged }) {
               <div className="card-actions">
                 {/* "Again" resets the interval; "Got it" advances it. */}
                 <button className="btn" onClick={() => grade(false)}>
-                  ↺ Again
+                  Again
                 </button>
                 <button className="btn-primary" onClick={() => grade(true)}>
-                  ✓ Got it
+                  Got it
                 </button>
               </div>
             </>

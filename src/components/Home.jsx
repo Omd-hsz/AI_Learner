@@ -39,7 +39,7 @@ export default function Home({ curriculum, progress, dueCount, onOpenTopic }) {
         />
         {dueCount > 0 && (
           <p className="due-banner">
-            🔁 You have <strong>{dueCount}</strong> flashcard
+            You have <strong>{dueCount}</strong> flashcard
             {dueCount === 1 ? '' : 's'} due — head to the Cards tab to review.
           </p>
         )}

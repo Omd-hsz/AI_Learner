@@ -104,12 +104,19 @@ export default function Settings({ onBack, onChanged }) {
           type="password"
           value={settings.apiKey}
           onChange={(e) => update({ apiKey: e.target.value })}
-          placeholder="Paste your API key (e.g. sk-… or sk-ant-…)"
+          placeholder="Paste your LiteLLM key (sk-…)"
         />
       </section>
 
       <section className="setting-block">
         <h2>Provider & models</h2>
+        {settings.provider === 'litellm' && (
+          <p className="muted small">
+            Default gateway: <code>https://litellm.data.divar.cloud</code> (OpenAI-compatible).
+            Lessons default to <strong>gemini-2.5-flash</strong>; quizzes to{' '}
+            <strong>grok-4-1-fast-non-reasoning</strong>.
+          </p>
+        )}
         <label>Provider</label>
         <select
           value={settings.provider}
@@ -151,14 +158,14 @@ export default function Settings({ onBack, onChanged }) {
         <h2>Backup & data</h2>
         <div className="row">
           <button className="btn" onClick={handleExport}>
-            ⬇ Export JSON
+            Export JSON
           </button>
           <label className="btn file-label">
-            ⬆ Import JSON
+            Import JSON
             <input type="file" accept="application/json" onChange={handleImport} hidden />
           </label>
           <button className="btn btn-danger" onClick={handleReset}>
-            ⨯ Reset progress
+            Reset progress
           </button>
         </div>
       </section>

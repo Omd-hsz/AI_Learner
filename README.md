@@ -36,12 +36,23 @@ Open the printed URL. On first use you'll be asked for an API key.
 
 ### Choosing a provider
 
-In **Settings** pick `anthropic` (default) or `openai`, paste your key, and
-optionally set custom model names. Leave the model fields blank to use the
-defaults:
+**Default: LiteLLM (Divar team gateway)** — OpenAI-compatible proxy at
+`https://litellm.data.divar.cloud`. Paste your team `sk-…` key in Settings.
+
+Recommended models on the Divar key (from team pricing; click **Fetch available
+models** to see your key's live list):
+
+| Role | Model | Why |
+| ---- | ----- | --- |
+| **Lessons (best value)** | `gemini-2.5-flash` | ~$0.30/$2.50 per 1M tokens; strong at structured markdown, code, and explanations. Used elsewhere in Divar tooling for summaries. |
+| **Quizzes / flashcards (cheapest)** | `grok-4-1-fast-non-reasoning` | ~$0.20/$0.50 per 1M tokens; fine for short MCQ generation. |
+| **Upgrade if you want richer lessons** | `claude-sonnet-4-5-20250929` | Better pedagogy, ~10× the cost of gemini-2.5-flash. |
+
+You can also switch to direct `anthropic` or `openai` in Settings if you prefer.
 
 | Provider  | Premium (lessons) | Cheap (cards/quiz) |
 | --------- | ----------------- | ------------------ |
+| litellm (default) | `gemini-2.5-flash` | `grok-4-1-fast-non-reasoning` |
 | anthropic | `claude-sonnet-4-5` | `claude-haiku-4-5` |
 | openai    | `gpt-4o`            | `gpt-4o-mini`      |
 

@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- App icon. SVG so it scales to any size the OS asks for (192, 512, etc.). -->
+<!-- App icon — vintage pastel palette -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#0ea5e9"/>
-    </linearGradient>
-  </defs>
-  <!-- Background rounded square (safe-zone friendly for maskable icons). -->
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- A simple "spark / lesson" glyph. -->
-  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 120 L256 392" />
-    <path d="M120 256 L392 256" />
-    <path d="M168 168 L344 344" />
-    <path d="M344 168 L168 344" />
-  </g>
-  <circle cx="256" cy="256" r="58" fill="#ffffff"/>
-  <circle cx="256" cy="256" r="30" fill="#6366f1"/>
+  <rect width="512" height="512" rx="48" fill="#faf6ef"/>
+  <rect x="24" y="24" width="464" height="464" rx="36" fill="none" stroke="#e6ddd0" stroke-width="4"/>
+  <!-- Open book -->
+  <path d="M128 160 L256 200 L384 160 L384 360 L256 320 L128 360 Z" fill="#f5eef2" stroke="#c9a8b8" stroke-width="6" stroke-linejoin="round"/>
+  <line x1="256" y1="200" x2="256" y2="320" stroke="#c9a8b8" stroke-width="4"/>
+  <!-- Decorative lines (text) -->
+  <line x1="168" y1="240" x2="228" y2="252" stroke="#a8c4c8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="168" y1="280" x2="220" y2="290" stroke="#b5cdb8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="284" y1="252" x2="344" y2="240" stroke="#a8c4c8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="292" y1="290" x2="344" y2="280" stroke="#b5cdb8" stroke-width="5" stroke-linecap="round"/>
 </svg>

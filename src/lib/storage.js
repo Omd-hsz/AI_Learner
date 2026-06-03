@@ -21,7 +21,7 @@ const SETTINGS_KEY = 'aiLearn.settings'
 // The defaults used until the user changes anything in Settings.
 const DEFAULT_SETTINGS = {
   apiKey: '',
-  provider: 'anthropic', // matches a key in PROVIDERS (see lib/api.js)
+  provider: 'litellm', // Divar LiteLLM proxy (OpenAI-compatible)
   // Empty string means "use the provider's built-in default model".
   premiumModel: '',
   cheapModel: '',

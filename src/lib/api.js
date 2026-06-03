@@ -15,10 +15,40 @@
 import { getSettings, saveSettings } from './storage.js'
 
 // The swappable provider config. To add a provider, add another entry here.
+//
+// LiteLLM is the DEFAULT: Divar's proxy speaks the OpenAI API format, so we
+// POST to /v1/chat/completions with Authorization: Bearer <key> — exactly like
+// the Python example you shared (openai.OpenAI(base_url=..., api_key=...)).
 export const PROVIDERS = {
+  litellm: {
+    // OpenAI-compatible LiteLLM proxy (Divar team gateway).
+    baseUrl: 'https://litellm.data.divar.cloud',
+    url: 'https://litellm.data.divar.cloud/v1/chat/completions',
+    modelsUrl: 'https://litellm.data.divar.cloud/v1/models',
+    modelInfoUrl: 'https://litellm.data.divar.cloud/v1/model/info',
+    format: 'openai',
+    // gemini-2.5-flash: best price/quality for structured teaching (~$0.30/$2.50
+    // per 1M tokens on the team key — see server.py MODELS_TO_TEST).
+    premiumModel: 'gemini-2.5-flash',
+    // grok-4-1-fast-non-reasoning: cheapest chat model on the key (~$0.20/$0.50);
+    // fine for short quiz/flashcard calls. Use gemini-2.5-flash if quality drops.
+    cheapModel: 'grok-4-1-fast-non-reasoning',
+    headers: (k) => ({
+      Authorization: `Bearer ${k}`,
+      'content-type': 'application/json',
+    }),
+    body: (system, messages, model) => ({
+      model,
+      stream: true,
+      max_tokens: 4096,
+      messages: [{ role: 'system', content: system }, ...messages],
+    }),
+  },
   anthropic: {
+    baseUrl: 'https://api.anthropic.com',
     url: 'https://api.anthropic.com/v1/messages',
     modelsUrl: 'https://api.anthropic.com/v1/models',
+    format: 'anthropic',
     premiumModel: 'claude-sonnet-4-5',
     cheapModel: 'claude-haiku-4-5',
     headers: (k) => ({
@@ -37,8 +67,10 @@ export const PROVIDERS = {
     }),
   },
   openai: {
+    baseUrl: 'https://api.openai.com',
     url: 'https://api.openai.com/v1/chat/completions',
     modelsUrl: 'https://api.openai.com/v1/models',
+    format: 'openai',
     premiumModel: 'gpt-4o',
     cheapModel: 'gpt-4o-mini',
     headers: (k) => ({
@@ -49,22 +81,22 @@ export const PROVIDERS = {
     body: (system, messages, model) => ({
       model,
       stream: true,
+      max_tokens: 4096,
       messages: [{ role: 'system', content: system }, ...messages],
     }),
   },
 }
 
-// Pull one text chunk out of a single parsed SSE JSON object, for either
-// provider. Returns '' if this particular event carries no text.
-function extractDelta(provider, json) {
-  if (provider === 'anthropic') {
+// Pull one text chunk out of a single parsed SSE JSON object.
+function extractDelta(format, json) {
+  if (format === 'anthropic') {
     // Anthropic streams typed events; only content_block_delta has text.
     if (json.type === 'content_block_delta' && json.delta?.type === 'text_delta') {
       return json.delta.text || ''
     }
     return ''
   }
-  // openai: choices[0].delta.content
+  // OpenAI format (also used by LiteLLM proxy): choices[0].delta.content
   return json.choices?.[0]?.delta?.content || ''
 }
 
@@ -141,7 +173,7 @@ export async function streamChat({
         if (data === '[DONE]') continue // OpenAI's end marker
         try {
           const json = JSON.parse(data)
-          const piece = extractDelta(providerName, json)
+          const piece = extractDelta(provider.format, json)
           if (piece) {
             full += piece
             if (onToken) onToken(piece)
@@ -207,18 +239,45 @@ export async function generate({ kind = 'premium', system, messages, onToken, si
   }
 }
 
-// Fetch the provider's current list of model IDs.
+// Fetch the provider's current list of chat model IDs.
+// For LiteLLM we prefer /v1/model/info (includes mode=chat vs embedding).
 export async function fetchModels(providerName, apiKey) {
   const provider = PROVIDERS[providerName]
   if (!provider) throw new Error(`Unknown provider: ${providerName}`)
-  const res = await fetch(provider.modelsUrl, { headers: provider.headers(apiKey) })
+  const headers = provider.headers(apiKey)
+
+  // LiteLLM: richer endpoint that separates chat from embedding models.
+  if (provider.modelInfoUrl) {
+    try {
+      const res = await fetch(provider.modelInfoUrl, { headers })
+      if (res.ok) {
+        const json = await res.json()
+        const chat = []
+        for (const m of json.data || []) {
+          const info = m.model_info || {}
+          const name = m.model_name || info.id
+          if (!name) continue
+          const mode = (info.mode || '').toLowerCase()
+          if (mode === 'embedding' || name.toLowerCase().includes('embed')) continue
+          if (mode === 'chat' || mode === 'completion' || mode === '') chat.push(name)
+        }
+        if (chat.length) return chat.sort()
+      }
+    } catch {
+      // fall through to /v1/models
+    }
+  }
+
+  const res = await fetch(provider.modelsUrl, { headers })
   if (!res.ok) {
     const t = await res.text().catch(() => '')
     throw new Error(`Could not list models (${res.status}): ${t}`)
   }
   const json = await res.json()
-  // Both providers return { data: [{ id, ... }, ...] }.
-  return (json.data || []).map((m) => m.id)
+  // OpenAI + LiteLLM return { data: [{ id, ... }, ...] }.
+  return (json.data || [])
+    .map((m) => m.id)
+    .filter((id) => id && !id.toLowerCase().includes('embed'))
 }
 
 // Pick a reasonable model from the live list when the configured one is invalid.
@@ -228,8 +287,8 @@ async function pickValidModel(providerName, apiKey, kind) {
   const ids = await fetchModels(providerName, apiKey).catch(() => [])
   if (!ids.length) return null
   const wantCheap = kind === 'cheap'
-  const cheapHints = ['mini', 'haiku', 'small', 'flash', 'lite']
-  const premiumHints = ['sonnet', '4o', 'gpt-4', 'opus', 'pro']
+  const cheapHints = ['mini', 'haiku', 'small', 'flash', 'lite', 'grok', 'gemma']
+  const premiumHints = ['sonnet', '4o', 'gpt-4', 'opus', 'pro', 'gemini-2.5-flash', 'gpt-4.1']
   const hints = wantCheap ? cheapHints : premiumHints
   const match = ids.find((id) => hints.some((h) => id.toLowerCase().includes(h)))
   return match || ids[0]

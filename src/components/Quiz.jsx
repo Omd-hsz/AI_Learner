@@ -119,7 +119,7 @@ export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
       </div>
       <h1>Quiz me</h1>
 
-      {error && <div className="error">⚠ {error}</div>}
+      {error && <div className="error">{error}</div>}
 
       {phase === 'idle' && (
         <>
@@ -135,7 +135,7 @@ export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
                 {completedTopics.length === 1 ? '' : 's'}.
               </p>
               <button className="btn-primary" onClick={startQuiz}>
-                ▶ Start 5-question quiz
+                Start quiz
               </button>
             </>
           )}
@@ -198,7 +198,7 @@ export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
           {picked !== null && (
             <div className="explanation">
               <strong>
-                {picked === current.answer ? '✓ Correct' : '✗ Not quite'}
+                {picked === current.answer ? 'Correct' : 'Not quite'}
               </strong>
               {current.explanation && <p>{current.explanation}</p>}
               <button className="btn-primary" onClick={next}>
