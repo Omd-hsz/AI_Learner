@@ -80,6 +80,17 @@ export async function getLesson(topicId) {
   return db.get('lessons', topicId)
 }
 
+// Load cached lessons for many topic ids at once (used by the Module screen).
+export async function getLessonsForTopics(topicIds) {
+  const db = await getDB()
+  const rows = await Promise.all(topicIds.map((id) => db.get('lessons', id)))
+  const map = {}
+  topicIds.forEach((id, i) => {
+    if (rows[i]) map[id] = rows[i]
+  })
+  return map
+}
+
 export async function deleteLesson(topicId) {
   const db = await getDB()
   await db.delete('lessons', topicId)

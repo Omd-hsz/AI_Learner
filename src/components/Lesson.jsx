@@ -11,17 +11,14 @@
 // -----------------------------------------------------------------------------
 import { useEffect, useRef, useState } from 'react'
 import { generate } from '../lib/api.js'
-import { buildSystemPrompt, buildLessonRequest } from '../lib/prompts.js'
-import { extractFlashcards } from '../lib/parse.js'
-import { createCard } from '../lib/srs.js'
+import { buildSystemPrompt } from '../lib/prompts.js'
+import { generateAndCacheLesson } from '../lib/lessonGen.js'
 import {
   STATUS,
   getLesson,
   saveLesson,
   setProgress,
   getProgress,
-  addFlashcards,
-  deleteFlashcardsByTopic,
 } from '../lib/db.js'
 import Markdown from './Markdown.jsx'
 
@@ -93,50 +90,22 @@ export default function Lesson({ topic, hasKey, onNeedKey, onBack, onChanged }) 
     setStreaming('')
     setLessonText('')
 
-    // A regenerate starts a fresh conversation; clears the old thread too.
-    const baseMessages = [
-      { role: 'user', content: buildLessonRequest(topic) },
-    ]
-
     const controller = new AbortController()
     abortRef.current = controller
 
-    let acc = ''
     try {
-      await generate({
-        kind: 'premium', // lessons use the strong model
-        system,
-        messages: baseMessages,
+      const result = await generateAndCacheLesson(topic, {
         signal: controller.signal,
-        onToken: (t) => {
-          acc += t
-          setStreaming(acc)
-        },
+        isRegenerate,
+        onToken: (acc) => setStreaming(acc),
       })
 
-      const assistantMsg = { role: 'assistant', content: acc }
-      const full = [...baseMessages, assistantMsg]
-      setMessages(full)
-      setLessonText(acc)
+      setMessages(result.messages)
+      setLessonText(result.markdown)
       setStreaming('')
 
-      // Cache the lesson so reopening is free + offline.
-      await saveLesson(topic.id, { markdown: acc, messages: full })
-
-      // Parse + store flashcards. On regenerate, replace old cards for this
-      // topic so we don't pile up duplicates.
-      const cards = extractFlashcards(acc)
-      if (cards.length) {
-        if (isRegenerate) await deleteFlashcardsByTopic(topic.id)
-        await addFlashcards(cards.map((c) => createCard(topic.id, c.q, c.a)))
-      }
-
-      // Opening/generating a lesson moves it to "In progress" (unless already
-      // completed).
-      if (status !== STATUS.COMPLETED) {
-        await setProgress(topic.id, STATUS.IN_PROGRESS)
-        setStatus(STATUS.IN_PROGRESS)
-      }
+      const savedStatus = await getProgress(topic.id)
+      setStatus(savedStatus)
       onChanged?.()
     } catch (err) {
       if (err.name !== 'AbortError') setError(err.message || String(err))

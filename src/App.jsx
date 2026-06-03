@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 import { useCallback, useEffect, useState } from 'react'
 import Home from './components/Home.jsx'
+import Module from './components/Module.jsx'
 import Lesson from './components/Lesson.jsx'
 import Flashcards from './components/Flashcards.jsx'
 import Quiz from './components/Quiz.jsx'
@@ -22,6 +23,7 @@ import { hasApiKey, saveSettings } from './lib/storage.js'
 export default function App() {
   const [curriculum, setCurriculum] = useState(null)
   const [view, setView] = useState('home')
+  const [module, setModule] = useState(null)
   const [topic, setTopic] = useState(null)
 
   // Shared, frequently-read state.
@@ -51,9 +53,21 @@ export default function App() {
     refresh()
   }, [refresh])
 
+  function openModule(m) {
+    setModule(m)
+    setTopic(null)
+    setView('module')
+  }
+
   function openTopic(t) {
     setTopic(t)
     setView('lesson')
+  }
+
+  function backFromLesson() {
+    // Return to the module if we came from one, otherwise home.
+    if (module) setView('module')
+    else setView('home')
   }
 
   // Saving a key from the first-use prompt.
@@ -67,7 +81,7 @@ export default function App() {
     <div className="app">
       {/* Top navigation bar, always visible. */}
       <nav className="nav">
-        <button className="brand" onClick={() => setView('home')}>
+        <button className="brand" onClick={() => { setModule(null); setView('home') }}>
           AI Learning Companion
         </button>
         <div className="nav-links">
@@ -99,7 +113,19 @@ export default function App() {
             curriculum={curriculum}
             progress={progress}
             dueCount={dueCount}
+            onOpenModule={openModule}
+          />
+        )}
+
+        {view === 'module' && module && (
+          <Module
+            module={module}
+            progress={progress}
+            hasKey={hasKey}
+            onNeedKey={() => setView('settings')}
+            onBack={() => setView('home')}
             onOpenTopic={openTopic}
+            onChanged={refresh}
           />
         )}
 
@@ -108,7 +134,7 @@ export default function App() {
             topic={topic}
             hasKey={hasKey}
             onNeedKey={() => setView('settings')}
-            onBack={() => setView('home')}
+            onBack={backFromLesson}
             onChanged={refresh}
           />
         )}

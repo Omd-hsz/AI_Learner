@@ -254,6 +254,110 @@ code {
   white-space: nowrap;
 }
 
+/* --- Module view (all lessons on one page) -------------------------------- */
+.module-open {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.module-open:hover .module-open-hint {
+  color: var(--text);
+}
+
+.module-head-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.module-open-hint {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+}
+
+.topic-list-compact {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--bg-soft2);
+}
+
+.topic-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 0.88rem;
+  list-style: none;
+}
+
+.module-view .lesson-title {
+  margin-bottom: 12px;
+}
+
+.batch-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  padding: 12px 14px;
+  background: #faf0d8;
+  border: 1px dashed var(--amber);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+}
+
+.module-actions {
+  margin: 18px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.module-lessons {
+  margin-top: 24px;
+}
+
+.module-lesson-section {
+  margin-bottom: 32px;
+}
+
+.module-lesson-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--bg-soft2);
+}
+
+.module-lesson-head h2 {
+  font-size: 1.05rem;
+  margin: 0 0 6px;
+}
+
+.module-lesson-btns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px dashed var(--bg-soft2);
+  margin: 28px 0 0;
+}
+
 /* --- Home / curriculum ---------------------------------------------------- */
 .home-head h1 {
   margin: 0 0 12px;

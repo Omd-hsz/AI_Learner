@@ -1,28 +1,20 @@
 // src/components/Home.jsx
 // -----------------------------------------------------------------------------
-// The curriculum home screen. Shows:
-//   - an overall progress bar across ALL topics
-//   - how many flashcards are due (quick link to study them)
-//   - each module as a card with its own progress bar and a list of topics,
-//     each topic showing a status badge (Not Started / In Progress / Completed)
-//
-// All data is passed in as props from App.jsx so this component stays "dumb"
-// (it just displays things and reports clicks back up).
+// The curriculum home screen. Each module opens as ONE page with all its lessons
+// loaded/generated together. Individual topics can still be opened from there.
 // -----------------------------------------------------------------------------
 import { STATUS } from '../lib/db.js'
 import ProgressBar from './ProgressBar.jsx'
 
-// Human-friendly text + css class for each status value.
 const STATUS_META = {
   [STATUS.NOT_STARTED]: { label: 'Not started', cls: 'badge-grey' },
   [STATUS.IN_PROGRESS]: { label: 'In progress', cls: 'badge-amber' },
   [STATUS.COMPLETED]: { label: 'Completed', cls: 'badge-green' },
 }
 
-export default function Home({ curriculum, progress, dueCount, onOpenTopic }) {
+export default function Home({ curriculum, progress, dueCount, onOpenModule }) {
   if (!curriculum) return <p className="muted">Loading curriculum…</p>
 
-  // Flatten every topic so we can compute an overall completion count.
   const allTopics = curriculum.modules.flatMap((m) => m.topics)
   const completedCount = allTopics.filter(
     (t) => progress[t.id] === STATUS.COMPLETED
@@ -46,42 +38,57 @@ export default function Home({ curriculum, progress, dueCount, onOpenTopic }) {
       </header>
 
       {curriculum.modules.map((module) => {
-        // Per-module progress.
         const done = module.topics.filter(
           (t) => progress[t.id] === STATUS.COMPLETED
         ).length
+        const started = module.topics.filter(
+          (t) => progress[t.id] && progress[t.id] !== STATUS.NOT_STARTED
+        ).length
+        const moduleStatus =
+          done === module.topics.length
+            ? STATUS.COMPLETED
+            : started > 0
+              ? STATUS.IN_PROGRESS
+              : STATUS.NOT_STARTED
+        const meta = STATUS_META[moduleStatus]
 
         return (
           <section
             key={module.id}
             className={`module module-${module.color || 'grey'}`}
           >
-            <div className="module-head">
-              <h2>{module.title}</h2>
-              <ProgressBar completed={done} total={module.topics.length} />
-            </div>
+            <button
+              className="module-open"
+              onClick={() => onOpenModule(module)}
+            >
+              <div className="module-head">
+                <div className="module-head-top">
+                  <h2>{module.title}</h2>
+                  <span className={`badge ${meta.cls}`}>{meta.label}</span>
+                </div>
+                <ProgressBar completed={done} total={module.topics.length} />
+                <p className="module-open-hint muted">
+                  {module.topics.length} topics · tap to open whole module
+                </p>
+              </div>
+            </button>
 
-            <ul className="topic-list">
+            <ul className="topic-list topic-list-compact">
               {module.topics.map((topic) => {
                 const status = progress[topic.id] || STATUS.NOT_STARTED
-                const meta = STATUS_META[status]
+                const topicMeta = STATUS_META[status]
                 return (
-                  <li key={topic.id}>
-                    <button
-                      className="topic-row"
-                      onClick={() => onOpenTopic(topic)}
-                    >
-                      <span className="topic-id">#{topic.id}</span>
-                      <span className="topic-title">
-                        {topic.title}
-                        {topic.foundation && (
-                          <span className="foundation-tag" title="Foundation (math/CS) topic">
-                            ∑
-                          </span>
-                        )}
-                      </span>
-                      <span className={`badge ${meta.cls}`}>{meta.label}</span>
-                    </button>
+                  <li key={topic.id} className="topic-preview">
+                    <span className="topic-id">#{topic.id}</span>
+                    <span className="topic-title">
+                      {topic.title}
+                      {topic.foundation && (
+                        <span className="foundation-tag" title="Foundation topic">
+                          ∑
+                        </span>
+                      )}
+                    </span>
+                    <span className={`badge ${topicMeta.cls}`}>{topicMeta.label}</span>
                   </li>
                 )
               })}
@@ -94,5 +101,4 @@ export default function Home({ curriculum, progress, dueCount, onOpenTopic }) {
 }
 
 // Edge cases this file does NOT handle:
-// - It assumes topic ids are unique across the whole curriculum (they are in the
-//   provided file). Duplicate ids would share one progress/lesson record.
+// - Topic rows here are previews only; you must open the module to read/generate.
