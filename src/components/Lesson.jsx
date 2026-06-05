@@ -18,7 +18,7 @@ import {
   buildComprehensionRequest,
 } from '../lib/prompts.js'
 import { extractJsonObject } from '../lib/parse.js'
-import { generateAndCacheLesson } from '../lib/lessonGen.js'
+import { generateAndCacheLesson, translateAndCacheLesson } from '../lib/lessonGen.js'
 import {
   STATUS,
   getLesson,
@@ -73,39 +73,64 @@ export default function Lesson({
   })
 
   const abortRef = useRef(null)
-  const didInit = useRef(false)
   const settings = getSettings()
   const profileRef = useRef({})
 
   const firstAssistantIdx = messages.findIndex((m) => m.role === 'assistant')
   const thread = firstAssistantIdx >= 0 ? messages.slice(firstAssistantIdx + 1) : []
 
-  // --- Load cached lesson (or auto-generate the first time) -----------------
+  // --- Load the lesson for the current topic + LANGUAGE ---------------------
+  // Re-runs when the topic OR the language changes (header language switch). If
+  // this language is already cached we show it instantly; if the OTHER language
+  // is cached we TRANSLATE it (same lesson, just translated); otherwise we
+  // generate a fresh lesson. Both translation and generation are cached, so the
+  // next switch is instant.
   useEffect(() => {
-    if (didInit.current) return
-    didInit.current = true
+    let cancelled = false
+    // Stop anything from the previous language/topic.
+    abortRef.current?.abort()
+    stopSpeaking()
+    setSpeaking(false)
+    // Reset visible state for the new language/topic.
+    setMessages([])
+    setLessonText('')
+    setStreaming('')
+    setError('')
+    setLessonUsage(null)
+    setComp({ phase: 'idle', questions: [], idx: 0, picked: null, score: 0, usage: null })
 
     ;(async () => {
       profileRef.current = await getProfile()
-      const cached = await getLesson(topic.id)
-      setStatus(await getProgress(topic.id))
+      const cached = await getLesson(topic.id, lang)
+      const st = await getProgress(topic.id)
+      if (cancelled) return
+      setStatus(st)
 
       if (cached) {
         setMessages(cached.messages || [])
         const firstAssistant = (cached.messages || []).find((m) => m.role === 'assistant')
         setLessonText(cached.markdown || firstAssistant?.content || '')
+        return
+      }
+      // Not cached in this language. Translate the other language if we have it.
+      const otherLang = lang === 'fa' ? 'en' : 'fa'
+      const source = await getLesson(topic.id, otherLang)
+      if (cancelled) return
+      if (source?.markdown && hasKey) {
+        runTranslation(source.markdown)
       } else if (hasKey) {
         runGeneration(false)
       }
     })()
 
     return () => {
+      cancelled = true
       abortRef.current?.abort()
       stopSpeaking()
       listenRef.current?.stop()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [topic.id, lang])
 
   // System prompt rebuilt with the latest profile each call.
   function systemPrompt() {
@@ -129,6 +154,7 @@ export default function Lesson({
       const result = await generateAndCacheLesson(topic, {
         signal: controller.signal,
         isRegenerate,
+        language: lang,
         onToken: (acc) => setStreaming(acc),
       })
       setMessages(result.messages)
@@ -136,6 +162,35 @@ export default function Lesson({
       setStreaming('')
       setLessonUsage(result.usage)
       setStatus(await getProgress(topic.id))
+      onChanged?.()
+    } catch (err) {
+      if (err.name !== 'AbortError') setError(err.message || String(err))
+    } finally {
+      setBusy(false)
+      abortRef.current = null
+    }
+  }
+
+  // --- Translate the existing lesson into the current language --------------
+  async function runTranslation(sourceMarkdown) {
+    setError('')
+    setBusy(true)
+    setStreaming('')
+    setLessonText('')
+    setLessonUsage(null)
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    try {
+      const result = await translateAndCacheLesson(topic, sourceMarkdown, lang, {
+        signal: controller.signal,
+        onToken: (acc) => setStreaming(acc),
+      })
+      setMessages(result.messages)
+      setLessonText(result.markdown)
+      setStreaming('')
+      setLessonUsage(result.usage)
       onChanged?.()
     } catch (err) {
       if (err.name !== 'AbortError') setError(err.message || String(err))
@@ -181,7 +236,7 @@ export default function Lesson({
       })
       const full = [...withUser, { role: 'assistant', content: acc }]
       setMessages(full)
-      await saveLesson(topic.id, { markdown: lessonText, messages: full })
+      await saveLesson(topic.id, { markdown: lessonText, messages: full, language: lang })
       onChanged?.()
       return acc
     } catch (err) {
@@ -236,8 +291,7 @@ export default function Lesson({
     setSpeaking(true)
     if (settings.aiVoice) {
       speakRef.current = speakAI(text, {
-        voice: settings.ttsVoice,
-        model: settings.ttsModel,
+        language: lang,
         onEnd: () => setSpeaking(false),
         onError: (err) => {
           // The AI voice failed (often: the provider has no TTS model). Tell the

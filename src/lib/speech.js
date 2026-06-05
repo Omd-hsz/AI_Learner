@@ -145,7 +145,7 @@ function chunkForTts(text, maxLen = 3500) {
   return chunks
 }
 
-export function speakAI(markdown, { voice, model, onEnd, onError } = {}) {
+export function speakAI(markdown, { language = 'en', onEnd, onError } = {}) {
   const text = speakableText(markdown)
   const chunks = chunkForTts(text)
   let stopped = false
@@ -154,12 +154,27 @@ export function speakAI(markdown, { voice, model, onEnd, onError } = {}) {
   // Run async, but return the controller synchronously so the UI can stop it.
   ;(async () => {
     try {
-      // Lazy import avoids a circular import (api.js <-> nothing here, but keeps
-      // speech.js loadable in environments without fetch during tests).
-      const { synthesizeSpeech } = await import('./api.js')
+      // Lazy import keeps speech.js loadable without fetch (e.g. in tests).
+      const { synthesizeSpeech, synthesizeSpeechGoogle } = await import('./api.js')
+      const { getSettings } = await import('./storage.js')
+      const s = getSettings()
+      const useGoogle = (s.ttsProvider || 'google') === 'google'
+
+      // Synthesize one chunk to an audio Blob using the chosen TTS service.
+      const synth = (chunk) => {
+        if (useGoogle) {
+          return synthesizeSpeechGoogle({
+            text: chunk,
+            languageCode: language === 'fa' ? 'fa-IR' : 'en-US',
+            voiceName: language === 'fa' ? s.googleVoiceFa : s.googleVoiceEn,
+          })
+        }
+        return synthesizeSpeech({ text: chunk, voice: s.ttsVoice, model: s.ttsModel })
+      }
+
       for (const chunk of chunks) {
         if (stopped) return
-        const blob = await synthesizeSpeech({ text: chunk, voice, model })
+        const blob = await synth(chunk)
         if (stopped) return
         const url = URL.createObjectURL(blob)
         await new Promise((resolve, reject) => {

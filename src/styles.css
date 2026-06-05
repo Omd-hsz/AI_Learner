@@ -924,6 +924,15 @@ code {
   border-top: 1px dashed var(--bg-soft2);
 }
 
+/* Header language toggle — a small pill that stands out from the nav links. */
+.lang-toggle {
+  border: 1px solid var(--accent-dark) !important;
+  border-radius: 999px;
+  min-width: 34px;
+  text-align: center;
+  font-weight: 600;
+}
+
 /* --- RTL (Farsi) tweaks --------------------------------------------------- */
 [dir='rtl'] body {
   font-family: 'Vazirmatn', 'DM Sans', Tahoma, system-ui, sans-serif;

@@ -100,6 +100,27 @@ export function buildLessonRequest(topic) {
 }
 
 // ---------------------------------------------------------------------------
+// TRANSLATE an already-generated lesson into the other language. We translate
+// (rather than generate fresh) so switching language keeps the SAME lesson —
+// same examples, same charts, same flashcards — just in the other language.
+// The system prompt must keep all structure/code/JSON/chart blocks intact.
+// ---------------------------------------------------------------------------
+export function translateLessonSystem(targetLanguage) {
+  const target = targetLanguage === 'fa' ? 'Persian (فارسی)' : 'English'
+  return `You are an expert technical translator for an AI course. Translate the lesson the user sends into fluent, natural ${target}. Rules you MUST follow:
+- Translate ALL prose, headings, list items, table cell text, and quiz/question text.
+- Keep the markdown structure IDENTICAL: same headings, lists, tables, blockquotes, and the same order.
+- Do NOT translate or alter: code blocks and their contents, inline code, URLs, and the contents of any \`\`\`chart ... \`\`\` fenced block (leave the chart JSON byte-for-byte the same).
+- For the final flashcards JSON block, translate ONLY the "q" and "a" string VALUES; keep the JSON valid and keep the keys ("flashcards","q","a") in English.
+${
+  targetLanguage === 'fa'
+    ? '- On first use of an important technical term, give the English term in parentheses, e.g. «بردار (vector)».'
+    : ''
+}
+Output ONLY the translated markdown lesson — no preamble, no explanation.`
+}
+
+// ---------------------------------------------------------------------------
 // PLACEMENT TEST — find where the learner should start.
 // ---------------------------------------------------------------------------
 export function placementSystem(language) {

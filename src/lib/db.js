@@ -140,33 +140,66 @@ export async function resetUsage() {
 // LESSONS (the token-saving cache)
 // ---------------------------------------------------------------------------
 
-// Save (or overwrite) a lesson for a topic. `messages` is the full chat array so
-// follow-up questions can continue with context. `markdown` is the rendered body.
-export async function saveLesson(topicId, { markdown, messages }) {
+// A lesson is now cached PER LANGUAGE so you can switch language instantly once
+// both versions exist. The record shape is:
+//   { topicId, byLang: { en: {markdown, messages, createdAt, updatedAt}, fa: {…} } }
+//
+// Older records stored a single lesson at the top level ({topicId, markdown,
+// messages}). A past bug generated every lesson in English regardless of the
+// chosen language, so we migrate those legacy records into byLang.en.
+function normalizeLessonRecord(rec) {
+  if (!rec) return null
+  if (rec.byLang) return rec
+  return {
+    topicId: rec.topicId,
+    byLang: {
+      en: {
+        markdown: rec.markdown,
+        messages: rec.messages,
+        createdAt: rec.createdAt,
+        updatedAt: rec.updatedAt,
+      },
+    },
+  }
+}
+
+// Save (or overwrite) a lesson for a topic IN A SPECIFIC LANGUAGE. `messages` is
+// the full chat array so follow-up questions can continue with context.
+// `markdown` is the rendered body. Other languages already cached are preserved.
+export async function saveLesson(topicId, { markdown, messages, language = 'en' }) {
   const db = await getDB()
-  const existing = await db.get('lessons', topicId)
-  const now = Date.now()
-  await db.put('lessons', {
+  const rec = normalizeLessonRecord(await db.get('lessons', topicId)) || {
     topicId,
+    byLang: {},
+  }
+  const now = Date.now()
+  const prev = rec.byLang[language]
+  rec.byLang[language] = {
     markdown,
     messages,
-    createdAt: existing?.createdAt ?? now,
+    createdAt: prev?.createdAt ?? now,
     updatedAt: now,
-  })
+  }
+  rec.topicId = topicId
+  await db.put('lessons', rec)
 }
 
-export async function getLesson(topicId) {
+// Get the cached lesson for a topic in a given language, or null if not cached.
+export async function getLesson(topicId, language = 'en') {
   const db = await getDB()
-  return db.get('lessons', topicId)
+  const rec = normalizeLessonRecord(await db.get('lessons', topicId))
+  return rec?.byLang?.[language] || null
 }
 
-// Load cached lessons for many topic ids at once (used by the Module screen).
-export async function getLessonsForTopics(topicIds) {
+// Load cached lessons for many topic ids at once, in one language (used by the
+// Module screen). Returns { [topicId]: {markdown, messages, …} }.
+export async function getLessonsForTopics(topicIds, language = 'en') {
   const db = await getDB()
   const rows = await Promise.all(topicIds.map((id) => db.get('lessons', id)))
   const map = {}
   topicIds.forEach((id, i) => {
-    if (rows[i]) map[id] = rows[i]
+    const rec = normalizeLessonRecord(rows[i])
+    if (rec?.byLang?.[language]) map[id] = rec.byLang[language]
   })
   return map
 }

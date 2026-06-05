@@ -26,6 +26,7 @@ export default function Module({
   onBack,
   onOpenTopic,
   onChanged,
+  lang = 'en',
 }) {
   // Per-topic UI state: markdown text, optional streaming buffer, status badge.
   const [topics, setTopics] = useState(() =>
@@ -40,24 +41,23 @@ export default function Module({
   const [batch, setBatch] = useState(null) // { index, total, title } while generating
   const [error, setError] = useState('')
   const abortRef = useRef(null)
-  const didInit = useRef(false)
 
   const doneCount = topics.filter((t) => t.status === STATUS.COMPLETED).length
   const loadedCount = topics.filter((t) => t.loaded).length
 
   // --- Load cache, then generate anything still missing ---------------------
+  // Re-runs when the language changes so the module shows cached lessons in the
+  // selected language (each language is cached separately).
   useEffect(() => {
-    if (didInit.current) return
-    didInit.current = true
     loadWholeModule()
     return () => abortRef.current?.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [lang])
 
   async function loadWholeModule() {
     setError('')
     const ids = module.topics.map((t) => t.id)
-    const cached = await getLessonsForTopics(ids)
+    const cached = await getLessonsForTopics(ids, lang)
 
     // Hydrate from cache first.
     setTopics((prev) =>
@@ -105,6 +105,7 @@ export default function Module({
 
         const result = await generateAndCacheLesson(topic, {
           signal: controller.signal,
+          language: lang,
           onToken: (acc) => {
             setTopics((prev) =>
               prev.map((row) =>

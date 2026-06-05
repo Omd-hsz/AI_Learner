@@ -30,12 +30,22 @@ const DEFAULT_SETTINGS = {
   // Voice tutor.
   voiceEnabled: true,
   voiceRate: 1, // speaking speed (0.5 slow … 2 fast)
-  // Realistic AI voice: when on, lessons are read aloud by a real TTS model via
-  // the provider's OpenAI-compatible /v1/audio/speech endpoint (uses your key)
+  // Realistic AI voice: when on, lessons are read aloud by a real TTS service
   // instead of the robotic built-in browser voice. Falls back to the browser
-  // voice automatically if the provider has no TTS model.
+  // voice automatically if the service is unavailable.
   aiVoice: true,
-  ttsModel: 'gpt-4o-mini-tts', // OpenAI-compatible TTS model on the proxy
+  // Which TTS service: 'google' (Google Cloud Text-to-Speech, generous free
+  // tier, great Farsi support, own API key) or 'proxy' (the chat provider's
+  // OpenAI-compatible /v1/audio/speech — only works if the proxy exposes a TTS
+  // model, which the Divar LiteLLM proxy currently does NOT).
+  ttsProvider: 'google',
+  // Google Cloud TTS: a Google Cloud API key (separate from the chat key) and
+  // voice names per language. Empty voice name => Google auto-selects one.
+  googleTtsKey: '',
+  googleVoiceEn: 'en-US-Neural2-C', // realistic English neural voice
+  googleVoiceFa: 'fa-IR-Standard-A', // Persian (Google has Standard fa-IR voices)
+  // Proxy TTS (only if your chat provider has an OpenAI-style TTS model):
+  ttsModel: 'gpt-4o-mini-tts',
   ttsVoice: 'alloy', // alloy | echo | fable | onyx | nova | shimmer
 }
 

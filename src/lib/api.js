@@ -359,6 +359,48 @@ export async function synthesizeSpeech({ text, voice = 'alloy', model, signal } 
   return await res.blob()
 }
 
+// -----------------------------------------------------------------------------
+// synthesizeSpeechGoogle: realistic Text-to-Speech via the Google Cloud
+// Text-to-Speech REST API (https://texttospeech.googleapis.com). This is the
+// recommended AI voice: it has a generous free tier (roughly 1M characters/month
+// for WaveNet/Neural2 voices, ~4M for Standard), supports Farsi (fa-IR), and is
+// callable straight from the browser with just an API key — no backend needed.
+//
+// It needs a GOOGLE CLOUD API key (set in Settings), which is separate from the
+// chat/LLM key. Returns an audio Blob (mp3). Throws on any error so the caller
+// can fall back to the browser voice.
+// -----------------------------------------------------------------------------
+export async function synthesizeSpeechGoogle({ text, languageCode = 'en-US', voiceName, speakingRate = 1, signal } = {}) {
+  const settings = getSettings()
+  const key = settings.googleTtsKey
+  if (!key) throw new Error('No Google Cloud API key set (Settings → AI voice).')
+
+  // If no explicit voice name, send only the language so Google picks a default.
+  const voice = voiceName ? { languageCode, name: voiceName } : { languageCode }
+  const res = await fetch(
+    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        input: { text },
+        voice,
+        audioConfig: { audioEncoding: 'MP3', speakingRate },
+      }),
+      signal,
+    },
+  )
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`Google TTS error ${res.status}: ${errText || res.statusText}`)
+  }
+  const json = await res.json()
+  if (!json.audioContent) throw new Error('Google TTS returned no audio.')
+  // audioContent is base64-encoded mp3 — decode it into a Blob.
+  const bytes = Uint8Array.from(atob(json.audioContent), (c) => c.charCodeAt(0))
+  return new Blob([bytes], { type: 'audio/mpeg' })
+}
+
 // Fetch the provider's current list of chat model IDs.
 // For LiteLLM we prefer /v1/model/info (includes mode=chat vs embedding).
 export async function fetchModels(providerName, apiKey) {

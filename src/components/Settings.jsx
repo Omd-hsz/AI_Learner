@@ -148,31 +148,77 @@ export default function Settings({ onBack, onChanged }) {
 
         {settings.aiVoice && (
           <>
-            <label>AI voice</label>
+            <label>Voice service</label>
             <select
-              value={settings.ttsVoice}
-              onChange={(e) => update({ ttsVoice: e.target.value })}
+              value={settings.ttsProvider}
+              onChange={(e) => update({ ttsProvider: e.target.value })}
             >
-              <option value="alloy">Alloy</option>
-              <option value="echo">Echo</option>
-              <option value="fable">Fable</option>
-              <option value="onyx">Onyx</option>
-              <option value="nova">Nova</option>
-              <option value="shimmer">Shimmer</option>
+              <option value="google">Google Cloud TTS (recommended)</option>
+              <option value="proxy">Chat provider TTS (OpenAI-style)</option>
             </select>
 
-            <label>TTS model</label>
-            <input
-              type="text"
-              value={settings.ttsModel}
-              onChange={(e) => update({ ttsModel: e.target.value })}
-              placeholder="gpt-4o-mini-tts"
-            />
-            <p className="muted small">
-              The realistic voice calls your provider's audio endpoint (costs a
-              little per use). If your provider has no TTS model, it falls back to
-              the free browser voice automatically.
-            </p>
+            {settings.ttsProvider === 'google' && (
+              <>
+                <label>Google Cloud API key</label>
+                <input
+                  type="password"
+                  value={settings.googleTtsKey}
+                  onChange={(e) => update({ googleTtsKey: e.target.value })}
+                  placeholder="AIza… (Google Cloud Text-to-Speech key)"
+                />
+                <label>English voice name</label>
+                <input
+                  type="text"
+                  value={settings.googleVoiceEn}
+                  onChange={(e) => update({ googleVoiceEn: e.target.value })}
+                  placeholder="en-US-Neural2-C"
+                />
+                <label>Farsi voice name</label>
+                <input
+                  type="text"
+                  value={settings.googleVoiceFa}
+                  onChange={(e) => update({ googleVoiceFa: e.target.value })}
+                  placeholder="fa-IR-Standard-A"
+                />
+                <p className="muted small">
+                  Uses Google Cloud Text-to-Speech. Free tier: ~1M characters/month
+                  for Neural2/WaveNet voices (~4M for Standard) — plenty for
+                  studying. Enable the Text-to-Speech API in your Google Cloud
+                  project and create an API key. Leave a voice name blank to let
+                  Google auto-pick. Browse voice names at cloud.google.com/text-to-speech/docs/voices.
+                  Falls back to the free browser voice if a call fails.
+                </p>
+              </>
+            )}
+
+            {settings.ttsProvider === 'proxy' && (
+              <>
+                <label>AI voice</label>
+                <select
+                  value={settings.ttsVoice}
+                  onChange={(e) => update({ ttsVoice: e.target.value })}
+                >
+                  <option value="alloy">Alloy</option>
+                  <option value="echo">Echo</option>
+                  <option value="fable">Fable</option>
+                  <option value="onyx">Onyx</option>
+                  <option value="nova">Nova</option>
+                  <option value="shimmer">Shimmer</option>
+                </select>
+                <label>TTS model</label>
+                <input
+                  type="text"
+                  value={settings.ttsModel}
+                  onChange={(e) => update({ ttsModel: e.target.value })}
+                  placeholder="gpt-4o-mini-tts"
+                />
+                <p className="muted small">
+                  Calls your chat provider's /v1/audio/speech endpoint. Note: the
+                  Divar LiteLLM proxy currently has no TTS model, so this will fall
+                  back to the browser voice — use Google Cloud TTS instead.
+                </p>
+              </>
+            )}
           </>
         )}
 

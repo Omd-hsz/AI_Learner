@@ -9,7 +9,7 @@
 // We deliberately do NOT use a router library: a single `view` string is enough
 // for five screens and keeps the app tiny.
 // -----------------------------------------------------------------------------
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Home from './components/Home.jsx'
 import Module from './components/Module.jsx'
 import Lesson from './components/Lesson.jsx'
@@ -58,6 +58,27 @@ export default function App() {
     document.documentElement.lang = lang
     document.documentElement.dir = isRTL(lang) ? 'rtl' : 'ltr'
   }, [lang])
+
+  // Flip the whole app between English and Farsi from the header. Persists the
+  // choice; lessons cached in the other language show instantly, uncached ones
+  // are translated on the fly (see Lesson.jsx).
+  function toggleLang() {
+    const next = lang === 'fa' ? 'en' : 'fa'
+    saveSettings({ language: next })
+    setLang(next)
+  }
+
+  // Force the placement test as the FIRST step: a new learner (has a key but
+  // hasn't done placement yet) is routed to it once, so every lesson is tailored
+  // to their level from the start. They can still skip via the test's Back link.
+  const didRoutePlacement = useRef(false)
+  useEffect(() => {
+    if (didRoutePlacement.current) return
+    if (curriculum && hasKey && profile && profile.placementDone === false) {
+      didRoutePlacement.current = true
+      setView('placement')
+    }
+  }, [curriculum, hasKey, profile])
 
   // The next topic in curriculum order (for the "Next lesson" button).
   const orderedTopics = useMemo(
@@ -123,6 +144,14 @@ export default function App() {
           </button>
           <button className={navCls(view, 'settings')} onClick={() => setView('settings')}>
             {t('settings', lang)}
+          </button>
+          {/* Quick language switch — flips the whole app + lessons instantly. */}
+          <button
+            className="nav-link lang-toggle"
+            onClick={toggleLang}
+            title={lang === 'fa' ? 'Switch to English' : 'تغییر به فارسی'}
+          >
+            {lang === 'fa' ? 'EN' : 'فا'}
           </button>
         </div>
       </nav>
