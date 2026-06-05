@@ -27,9 +27,16 @@ const DEFAULT_SETTINGS = {
   cheapModel: '',
   // UI + lesson language: 'en' (English) or 'fa' (Persian/Farsi).
   language: 'en',
-  // Voice tutor (free, browser Web Speech API).
+  // Voice tutor.
   voiceEnabled: true,
   voiceRate: 1, // speaking speed (0.5 slow … 2 fast)
+  // Realistic AI voice: when on, lessons are read aloud by a real TTS model via
+  // the provider's OpenAI-compatible /v1/audio/speech endpoint (uses your key)
+  // instead of the robotic built-in browser voice. Falls back to the browser
+  // voice automatically if the provider has no TTS model.
+  aiVoice: true,
+  ttsModel: 'gpt-4o-mini-tts', // OpenAI-compatible TTS model on the proxy
+  ttsVoice: 'alloy', // alloy | echo | fable | onyx | nova | shimmer
 }
 
 // Read the whole settings object. Always returns a complete object (defaults

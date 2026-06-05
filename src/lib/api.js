@@ -321,6 +321,44 @@ export async function generate({ kind = 'premium', system, messages, onToken, si
   }
 }
 
+// -----------------------------------------------------------------------------
+// synthesizeSpeech: turn text into REAL, natural-sounding speech audio using the
+// provider's OpenAI-compatible Text-to-Speech endpoint (/v1/audio/speech). This
+// replaces the robotic built-in browser voice with an AI voice. Returns an audio
+// Blob (mp3) the caller plays with an <audio> element.
+//
+// Only works for OpenAI-format providers (litellm proxy + openai). Throws if the
+// provider can't do TTS or the model isn't available — the caller then falls
+// back to the browser voice, so a missing TTS model degrades gracefully.
+// -----------------------------------------------------------------------------
+export async function synthesizeSpeech({ text, voice = 'alloy', model, signal } = {}) {
+  const settings = getSettings()
+  const provider = PROVIDERS[settings.provider]
+  if (!provider) throw new Error(`Unknown provider: ${settings.provider}`)
+  if (provider.format !== 'openai') {
+    throw new Error('This provider has no AI voice (TTS). Use the LiteLLM proxy or OpenAI.')
+  }
+  if (!settings.apiKey) throw new Error('No API key set. Add one in Settings.')
+
+  const ttsModel = model || settings.ttsModel || 'gpt-4o-mini-tts'
+  const res = await fetch(`${provider.baseUrl}/v1/audio/speech`, {
+    method: 'POST',
+    headers: provider.headers(settings.apiKey),
+    body: JSON.stringify({
+      model: ttsModel,
+      input: text,
+      voice,
+      response_format: 'mp3',
+    }),
+    signal,
+  })
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`TTS error ${res.status}: ${errText || res.statusText}`)
+  }
+  return await res.blob()
+}
+
 // Fetch the provider's current list of chat model IDs.
 // For LiteLLM we prefer /v1/model/info (includes mode=chat vs embedding).
 export async function fetchModels(providerName, apiKey) {

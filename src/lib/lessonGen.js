@@ -4,6 +4,7 @@
 // Used by both the single-topic Lesson screen and the whole-module Module screen.
 // -----------------------------------------------------------------------------
 import { generate } from './api.js'
+import { getSettings } from './storage.js'
 import { buildSystemPrompt, buildLessonRequest } from './prompts.js'
 import { extractFlashcards } from './parse.js'
 import { createCard } from './srs.js'
@@ -21,7 +22,11 @@ import {
 // Returns { markdown, messages, usage }. Personalizes using the saved profile.
 export async function generateAndCacheLesson(topic, { onToken, signal, isRegenerate = false } = {}) {
   const profile = await getProfile()
-  const system = buildSystemPrompt(topic, profile)
+  // The chosen UI/lesson language lives in settings (localStorage), NOT in the
+  // learner profile. Without this, buildSystemPrompt() sees profile.language ===
+  // undefined and silently writes every lesson in English even when the user
+  // picked Farsi. Merge it in so lessons are actually generated in Farsi.
+  const system = buildSystemPrompt(topic, { ...profile, language: getSettings().language })
   const baseMessages = [{ role: 'user', content: buildLessonRequest(topic) }]
 
   let acc = ''

@@ -829,6 +829,21 @@ code {
 .markdown ul,
 .markdown ol { padding-left: 22px; }
 
+/* Real charts (inline SVG produced by src/lib/charts.js). The wrapper centers
+   the chart and caps its width so it never overflows the lesson column. */
+.markdown .chart {
+  margin: 1.2em auto;
+  max-width: 520px;
+  background: #fbf7f0;
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.markdown .chart svg {
+  display: block;
+}
+
 .markdown hr {
   border: none;
   border-top: 1px dashed var(--bg-soft2);
@@ -912,6 +927,20 @@ code {
 /* --- RTL (Farsi) tweaks --------------------------------------------------- */
 [dir='rtl'] body {
   font-family: 'Vazirmatn', 'DM Sans', Tahoma, system-ui, sans-serif;
+}
+
+/* The serif heading font (Libre Baskerville) has no Persian glyphs, so in RTL
+   headings and table headers fall back to Vazir for correct, readable Farsi. */
+[dir='rtl'] .markdown h1,
+[dir='rtl'] .markdown h2,
+[dir='rtl'] .markdown h3,
+[dir='rtl'] .markdown th {
+  font-family: 'Vazirmatn', Tahoma, system-ui, sans-serif;
+}
+
+/* Charts inherit the page font; force Vazir on their SVG text under RTL. */
+[dir='rtl'] .markdown .chart svg {
+  font-family: 'Vazirmatn', Tahoma, system-ui, sans-serif;
 }
 
 [dir='rtl'] .topic-id {

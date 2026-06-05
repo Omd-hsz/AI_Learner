@@ -6,6 +6,22 @@
 // know) and to the kind of request (lesson / placement test / comprehension).
 // -----------------------------------------------------------------------------
 
+// VISUALS: how to draw things. NEVER ASCII art — the app renders REAL tables
+// and REAL charts. Whenever a visual would help (comparisons, distributions,
+// trends, breakdowns, structured data), use one of these two and nothing else:
+//   • A GitHub-flavored markdown TABLE for structured/tabular data.
+//   • A ```chart fenced code block holding JSON for bar / line / pie charts.
+// The chart JSON is rendered by the app into a real SVG chart, so the schema
+// must be followed exactly. (Defined before SYSTEM_PROMPT because that template
+// string interpolates it.)
+export const VISUALS_RULE = `VISUALS (important): NEVER draw ASCII art, ASCII tables, or ASCII diagrams — they look broken. Instead, whenever a picture would help (comparing options, showing a trend, a breakdown/proportion, or any structured data), use ONE of these, which the app renders for real:
+- A normal GitHub-Flavored Markdown TABLE for structured/tabular data.
+- A chart, written as a fenced code block with the language "chart" containing JSON. Supported types: "bar", "line", "pie". Schema (keep labels SHORT):
+  \`\`\`chart
+  {"type":"bar","title":"Short title","data":[{"label":"A","value":10},{"label":"B","value":25}]}
+  \`\`\`
+  (the three backticks above are literal markdown fences). Use "bar" to compare quantities, "line" for a trend over an ordered axis, "pie" for parts of a whole (values are summed into percentages). Pick real, meaningful numbers. Use charts/tables sparingly and only when they genuinely aid understanding — prose is still the default.`
+
 // The main "system prompt": this tells the model WHO it is and HOW to teach.
 // Persona = a SENIOR AI ENGINEER who is ALSO a SENIOR teaching-methods expert, so
 // examples are correct, production-grounded, and pedagogically strong.
@@ -30,13 +46,14 @@ Deliver every lesson in this structure with markdown headers:
    {"flashcards":[{"q":"...","a":"..."},{"q":"...","a":"..."},{"q":"...","a":"..."}]}
    \`\`\`
 
-META RULES (never skip): narrate WHAT/WHY/HOW on all code; ask me to predict or teach-back periodically; if asked for an answer too early, give a hint instead; flag and define jargon in one line; be honest about limitations; use analogies and ASCII diagrams. TONE: encouraging, precise, no fluff; correct misconceptions kindly. Before the lesson body, ask one short question to gauge prior knowledge, then adjust depth.
+META RULES (never skip): narrate WHAT/WHY/HOW on all code; ask me to predict or teach-back periodically; if asked for an answer too early, give a hint instead; flag and define jargon in one line; be honest about limitations; use vivid analogies. TONE: encouraging, precise, no fluff; correct misconceptions kindly. Before the lesson body, ask one short question to gauge prior knowledge, then adjust depth.
+${VISUALS_RULE}
 Commands: "Quiz me" = retrieval quiz; "I'm stuck" = hint ladder (small→bigger).`
 
 // Extra instructions appended ONLY for foundation (math/CS) topics.
 export const FOUNDATION_ADDON = `
 
-FOUNDATION MODE: Also act as a brilliant math/CS teacher: never show a symbol/formula without first the plain idea AND a concrete small-number example you actually compute; answer "why does AI care?" within 2 min; build formulas idea→example→pattern→formula; use ASCII diagrams and hand-verifiable arithmetic; in YOU TRY give a paper-sized calculation then the same in 3-4 lines of numpy; separate "intuition to keep" from "detail to look up"; if I seem intimidated, shrink numbers and reassure; end by connecting the math to the AI topic it unlocks.`
+FOUNDATION MODE: Also act as a brilliant math/CS teacher: never show a symbol/formula without first the plain idea AND a concrete small-number example you actually compute; answer "why does AI care?" within 2 min; build formulas idea→example→pattern→formula; prefer hand-verifiable arithmetic and, when a picture helps, a real markdown table or a \`\`\`chart block (never ASCII diagrams); in YOU TRY give a paper-sized calculation then the same in 3-4 lines of numpy; separate "intuition to keep" from "detail to look up"; if I seem intimidated, shrink numbers and reassure; end by connecting the math to the AI topic it unlocks.`
 
 // Map a level to a one-line depth instruction.
 function levelInstruction(level) {

@@ -30,7 +30,7 @@ import {
   appendKnowledgeNote,
 } from '../lib/db.js'
 import { getSettings } from '../lib/storage.js'
-import { speak, stopSpeaking, listenOnce, isTtsSupported, isSttSupported } from '../lib/speech.js'
+import { speak, speakAI, stopSpeaking, listenOnce, isTtsSupported, isSttSupported } from '../lib/speech.js'
 import { t } from '../lib/i18n.js'
 import Markdown from './Markdown.jsx'
 import CostTag from './CostTag.jsx'
@@ -229,19 +229,47 @@ export default function Lesson({
   }
 
   // --- Voice: read aloud ----------------------------------------------------
+  // Start speaking `text`. Prefer the realistic AI voice (TTS model via the
+  // provider); if it errors (e.g. the provider has no TTS model) fall back to
+  // the free browser voice so the button always does something.
+  function startSpeaking(text) {
+    setSpeaking(true)
+    if (settings.aiVoice) {
+      speakRef.current = speakAI(text, {
+        voice: settings.ttsVoice,
+        model: settings.ttsModel,
+        onEnd: () => setSpeaking(false),
+        onError: (err) => {
+          // The AI voice failed (often: the provider has no TTS model). Tell the
+          // user why, then fall back to the free browser voice so something plays.
+          setError(
+            `AI voice unavailable (${err?.message || 'TTS error'}). Using the browser voice — check the TTS model in Settings.`,
+          )
+          speakRef.current = speak(text, {
+            language: lang,
+            rate: settings.voiceRate || 1,
+            onEnd: () => setSpeaking(false),
+            onError: () => setSpeaking(false),
+          })
+        },
+      })
+    } else {
+      speakRef.current = speak(text, {
+        language: lang,
+        rate: settings.voiceRate || 1,
+        onEnd: () => setSpeaking(false),
+        onError: () => setSpeaking(false),
+      })
+    }
+  }
+
   function handleListen() {
     if (speaking) {
       speakRef.current?.stop()
       setSpeaking(false)
       return
     }
-    setSpeaking(true)
-    speakRef.current = speak(lessonText, {
-      language: lang,
-      rate: settings.voiceRate || 1,
-      onEnd: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
-    })
+    startSpeaking(lessonText)
   }
 
   // --- Voice: ask a question by speaking ------------------------------------
@@ -260,15 +288,7 @@ export default function Lesson({
       setListening(false)
       if (said && said.trim()) {
         const reply = await sendTurn(said.trim())
-        if (reply) {
-          setSpeaking(true)
-          speakRef.current = speak(reply, {
-            language: lang,
-            rate: settings.voiceRate || 1,
-            onEnd: () => setSpeaking(false),
-            onError: () => setSpeaking(false),
-          })
-        }
+        if (reply) startSpeaking(reply)
       }
     } catch (err) {
       setListening(false)

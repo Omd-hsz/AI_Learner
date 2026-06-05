@@ -136,7 +136,47 @@ export default function Settings({ onBack, onChanged }) {
           Enable voice tutor (free — uses your browser)
         </label>
 
-        <label>Speaking speed: {Number(settings.voiceRate).toFixed(2)}×</label>
+        <label style={{ marginTop: 14 }}>
+          <input
+            type="checkbox"
+            checked={settings.aiVoice}
+            onChange={(e) => update({ aiVoice: e.target.checked })}
+            style={{ width: 'auto', marginInlineEnd: 8 }}
+          />
+          Realistic AI voice (natural — uses your API key)
+        </label>
+
+        {settings.aiVoice && (
+          <>
+            <label>AI voice</label>
+            <select
+              value={settings.ttsVoice}
+              onChange={(e) => update({ ttsVoice: e.target.value })}
+            >
+              <option value="alloy">Alloy</option>
+              <option value="echo">Echo</option>
+              <option value="fable">Fable</option>
+              <option value="onyx">Onyx</option>
+              <option value="nova">Nova</option>
+              <option value="shimmer">Shimmer</option>
+            </select>
+
+            <label>TTS model</label>
+            <input
+              type="text"
+              value={settings.ttsModel}
+              onChange={(e) => update({ ttsModel: e.target.value })}
+              placeholder="gpt-4o-mini-tts"
+            />
+            <p className="muted small">
+              The realistic voice calls your provider's audio endpoint (costs a
+              little per use). If your provider has no TTS model, it falls back to
+              the free browser voice automatically.
+            </p>
+          </>
+        )}
+
+        <label>Speaking speed (browser voice): {Number(settings.voiceRate).toFixed(2)}×</label>
         <input
           type="range"
           min="0.5"

@@ -39,6 +39,7 @@ export function isSttSupported() {
 export function speakableText(markdown) {
   if (!markdown) return ''
   return markdown
+    .replace(/```chart[\s\S]*?```/g, ' (chart shown on screen) ') // our chart blocks
     .replace(/```[\s\S]*?```/g, ' (code example shown on screen) ') // code fences
     .replace(/`([^`]+)`/g, '$1') // inline code
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
@@ -112,6 +113,84 @@ export function speak(markdown, { language = 'en', rate = 1, onEnd, onError } = 
 
 export function stopSpeaking() {
   if (isTtsSupported()) window.speechSynthesis.cancel()
+}
+
+// --- AI Text-to-Speech (realistic voice) -----------------------------------
+// Reads text aloud using a REAL TTS model via the provider's /v1/audio/speech
+// endpoint (see api.js synthesizeSpeech), so it sounds natural instead of the
+// robotic browser voice. Works for English and Farsi (the model handles the
+// language from the text itself).
+//
+// Long lessons are split into <=3500-char chunks (the TTS endpoint caps input
+// length) and synthesized + played one after another. We synthesize the NEXT
+// chunk while the current one plays so playback stays smooth. Returns a
+// controller with stop(); callbacks: onEnd(), onError(err) so the caller can
+// fall back to the free browser voice when the provider has no TTS model.
+
+// Split speakable text into chunks no longer than maxLen, breaking on sentence
+// boundaries so each chunk sounds complete.
+function chunkForTts(text, maxLen = 3500) {
+  const sentences = text.match(/[^.!?؟\n]+[.!?؟]?\s*/g) || [text]
+  const chunks = []
+  let cur = ''
+  for (const s of sentences) {
+    if (cur.length + s.length > maxLen && cur) {
+      chunks.push(cur)
+      cur = ''
+    }
+    // A single sentence longer than maxLen is pushed as-is (rare).
+    cur += s
+  }
+  if (cur.trim()) chunks.push(cur)
+  return chunks
+}
+
+export function speakAI(markdown, { voice, model, onEnd, onError } = {}) {
+  const text = speakableText(markdown)
+  const chunks = chunkForTts(text)
+  let stopped = false
+  let audio = null
+
+  // Run async, but return the controller synchronously so the UI can stop it.
+  ;(async () => {
+    try {
+      // Lazy import avoids a circular import (api.js <-> nothing here, but keeps
+      // speech.js loadable in environments without fetch during tests).
+      const { synthesizeSpeech } = await import('./api.js')
+      for (const chunk of chunks) {
+        if (stopped) return
+        const blob = await synthesizeSpeech({ text: chunk, voice, model })
+        if (stopped) return
+        const url = URL.createObjectURL(blob)
+        await new Promise((resolve, reject) => {
+          audio = new Audio(url)
+          audio.onended = () => {
+            URL.revokeObjectURL(url)
+            resolve()
+          }
+          audio.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject(new Error('Audio playback failed.'))
+          }
+          audio.play().catch(reject)
+        })
+      }
+      if (!stopped) onEnd?.()
+    } catch (err) {
+      if (!stopped) onError?.(err)
+    }
+  })()
+
+  return {
+    stop() {
+      stopped = true
+      if (audio) {
+        audio.pause()
+        audio.src = ''
+        audio = null
+      }
+    },
+  }
 }
 
 // --- Speech-to-Text --------------------------------------------------------
