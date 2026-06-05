@@ -12,22 +12,25 @@ import {
   saveLesson,
   setProgress,
   getProgress,
+  getProfile,
   addFlashcards,
   deleteFlashcardsByTopic,
 } from './db.js'
 
 // Generate one topic's lesson, stream tokens via onToken, cache on success.
-// Returns { markdown, messages } or throws (unless AbortError).
-export async function generateAndCacheLesson(topic, { onToken, signal, isRegenerate = false }) {
-  const system = buildSystemPrompt(topic)
+// Returns { markdown, messages, usage }. Personalizes using the saved profile.
+export async function generateAndCacheLesson(topic, { onToken, signal, isRegenerate = false } = {}) {
+  const profile = await getProfile()
+  const system = buildSystemPrompt(topic, profile)
   const baseMessages = [{ role: 'user', content: buildLessonRequest(topic) }]
 
   let acc = ''
-  await generate({
+  const { usage } = await generate({
     kind: 'premium',
     system,
     messages: baseMessages,
     signal,
+    label: `lesson:${topic.id}`,
     onToken: (t) => {
       acc += t
       onToken?.(acc)
@@ -50,7 +53,7 @@ export async function generateAndCacheLesson(topic, { onToken, signal, isRegener
     await setProgress(topic.id, STATUS.IN_PROGRESS)
   }
 
-  return { markdown: acc, messages: full }
+  return { markdown: acc, messages: full, usage }
 }
 
 // Edge cases this file does NOT handle:

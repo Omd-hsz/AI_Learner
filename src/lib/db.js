@@ -16,7 +16,9 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'aiLearnDB'
-const DB_VERSION = 1
+// v2 adds two stores: `profile` (the learner's level + notes from the placement
+// test and comprehension checks) and `usage` (a log of token/cost per API call).
+const DB_VERSION = 2
 
 // Status constants so we never mistype a string like "complete" vs "completed".
 export const STATUS = {
@@ -52,8 +54,86 @@ function getDB() {
       if (!db.objectStoreNames.contains('quizScores')) {
         db.createObjectStore('quizScores', { keyPath: 'id', autoIncrement: true })
       }
+      // profile: a single record (id: 'me') with the learner's level + notes.
+      if (!db.objectStoreNames.contains('profile')) {
+        db.createObjectStore('profile', { keyPath: 'id' })
+      }
+      // usage: one row per API call (tokens + cost) so we can total spending.
+      if (!db.objectStoreNames.contains('usage')) {
+        db.createObjectStore('usage', { keyPath: 'id', autoIncrement: true })
+      }
     },
   })
+}
+
+// ---------------------------------------------------------------------------
+// PROFILE (the learner model that personalizes lessons)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_PROFILE = {
+  id: 'me',
+  level: '', // '', 'beginner', 'intermediate', 'advanced'
+  // Free-text notes the app accumulates: what the learner knows / struggles
+  // with. This string is injected into the lesson prompt for personalization.
+  knowledgeNotes: '',
+  placementDone: false,
+  recommendedTopicId: '',
+}
+
+export async function getProfile() {
+  const db = await getDB()
+  const row = await db.get('profile', 'me')
+  return { ...DEFAULT_PROFILE, ...(row || {}) }
+}
+
+export async function saveProfile(partial) {
+  const db = await getDB()
+  const current = await getProfile()
+  const next = { ...current, ...partial, id: 'me' }
+  await db.put('profile', next)
+  return next
+}
+
+// Append a short note to the learner's knowledge summary (keeps the last ~1500
+// chars so the prompt does not grow without bound).
+export async function appendKnowledgeNote(note) {
+  const current = await getProfile()
+  const combined = (current.knowledgeNotes + '\n' + note).trim()
+  const trimmed = combined.length > 1500 ? combined.slice(-1500) : combined
+  return saveProfile({ knowledgeNotes: trimmed })
+}
+
+// ---------------------------------------------------------------------------
+// USAGE (token + cost log)
+// ---------------------------------------------------------------------------
+
+export async function addUsage(record) {
+  const db = await getDB()
+  await db.add('usage', record)
+}
+
+export async function getAllUsage() {
+  const db = await getDB()
+  return db.getAll('usage')
+}
+
+// Sum everything into one { cost, inputTokens, outputTokens, totalTokens, calls }.
+export async function getUsageTotals() {
+  const rows = await getAllUsage()
+  const totals = { cost: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, calls: rows.length, costKnown: true }
+  for (const r of rows) {
+    if (r.cost == null) totals.costKnown = false
+    else totals.cost += r.cost
+    totals.inputTokens += r.inputTokens || 0
+    totals.outputTokens += r.outputTokens || 0
+    totals.totalTokens += r.totalTokens || 0
+  }
+  return totals
+}
+
+export async function resetUsage() {
+  const db = await getDB()
+  await db.clear('usage')
 }
 
 // ---------------------------------------------------------------------------
@@ -102,13 +182,33 @@ export async function deleteLesson(topicId) {
 
 export async function setProgress(topicId, status) {
   const db = await getDB()
-  await db.put('progress', { topicId, status, updatedAt: Date.now() })
+  const existing = await db.get('progress', topicId)
+  await db.put('progress', { ...(existing || {}), topicId, status, updatedAt: Date.now() })
 }
 
 export async function getProgress(topicId) {
   const db = await getDB()
   const row = await db.get('progress', topicId)
   return row?.status ?? STATUS.NOT_STARTED
+}
+
+// Store a comprehension score (0-100) for a topic without losing its status.
+export async function setComprehension(topicId, scorePct) {
+  const db = await getDB()
+  const existing = await db.get('progress', topicId)
+  await db.put('progress', {
+    ...(existing || {}),
+    topicId,
+    status: existing?.status || STATUS.IN_PROGRESS,
+    comprehension: scorePct,
+    updatedAt: Date.now(),
+  })
+}
+
+// Full progress record (status + comprehension + timestamps) for one topic.
+export async function getProgressRecord(topicId) {
+  const db = await getDB()
+  return db.get('progress', topicId)
 }
 
 // Return a plain object { topicId: status } for every topic that has progress.
@@ -189,6 +289,8 @@ export async function exportAll() {
     progress: await db.getAll('progress'),
     flashcards: await db.getAll('flashcards'),
     quizScores: await db.getAll('quizScores'),
+    profile: await db.getAll('profile'),
+    usage: await db.getAll('usage'),
   }
 }
 
@@ -196,7 +298,7 @@ export async function exportAll() {
 // store first so the import is a true restore, not a merge.
 export async function importAll(data) {
   const db = await getDB()
-  const stores = ['lessons', 'progress', 'flashcards', 'quizScores']
+  const stores = ['lessons', 'progress', 'flashcards', 'quizScores', 'profile', 'usage']
   const tx = db.transaction(stores, 'readwrite')
   for (const name of stores) {
     await tx.objectStore(name).clear()
@@ -210,10 +312,10 @@ export async function importAll(data) {
   await tx.done
 }
 
-// Wipe progress + lessons + cards (used by "Reset progress" in Settings).
+// Wipe progress + lessons + cards + profile + usage ("Reset progress").
 export async function resetAllData() {
   const db = await getDB()
-  const stores = ['lessons', 'progress', 'flashcards', 'quizScores']
+  const stores = ['lessons', 'progress', 'flashcards', 'quizScores', 'profile', 'usage']
   const tx = db.transaction(stores, 'readwrite')
   for (const name of stores) await tx.objectStore(name).clear()
   await tx.done

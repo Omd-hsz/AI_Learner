@@ -25,6 +25,11 @@ const DEFAULT_SETTINGS = {
   // Empty string means "use the provider's built-in default model".
   premiumModel: '',
   cheapModel: '',
+  // UI + lesson language: 'en' (English) or 'fa' (Persian/Farsi).
+  language: 'en',
+  // Voice tutor (free, browser Web Speech API).
+  voiceEnabled: true,
+  voiceRate: 1, // speaking speed (0.5 slow … 2 fast)
 }
 
 // Read the whole settings object. Always returns a complete object (defaults

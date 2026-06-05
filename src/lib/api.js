@@ -13,6 +13,40 @@
 // the lesson appearing live.
 // -----------------------------------------------------------------------------
 import { getSettings, saveSettings } from './storage.js'
+import { addUsage } from './db.js'
+
+// Approximate prices in USD per 1,000,000 tokens (input/output), used as a
+// FALLBACK when the provider does not return a real cost. Numbers mirror the
+// Divar team pricing in server.py. Unknown models => cost shown as "—".
+export const PRICES = {
+  'gemini-2.5-flash': { in: 0.3, out: 2.5 },
+  'gemini-3-flash-preview': { in: 0.5, out: 3.0 },
+  'gemini-2.5-pro': { in: 1.25, out: 10.0 },
+  'gemini-3-pro-preview': { in: 2.0, out: 12.0 },
+  'grok-4-1-fast-non-reasoning': { in: 0.2, out: 0.5 },
+  'grok-4-1-fast-reasoning': { in: 0.2, out: 0.5 },
+  'grok-4-fast-non-reasoning': { in: 0.2, out: 0.5 },
+  'gpt-4.1': { in: 2.0, out: 8.0 },
+  'gpt-5.2': { in: 1.75, out: 14.0 },
+  'gpt-4o': { in: 5.0, out: 15.0 },
+  'gpt-4o-mini': { in: 0.15, out: 0.6 },
+  'chatgpt-4o-latest': { in: 5.0, out: 15.0 },
+  'claude-sonnet-4-5': { in: 3.0, out: 15.0 },
+  'claude-sonnet-4-5-20250929': { in: 3.0, out: 15.0 },
+  'claude-haiku-4-5': { in: 1.0, out: 5.0 },
+  'claude-opus-4-5-20251101': { in: 5.0, out: 25.0 },
+  'deepseek-v3-fireworks': { in: 0.9, out: 0.9 },
+  'gemma-3-27b-it': { in: 0, out: 0 },
+  'gemma-3-12b-it': { in: 0, out: 0 },
+}
+
+// Compute a fallback cost (USD) from token counts and the PRICES table.
+// Returns null when we don't know the model's price.
+function estimateCost(model, inputTokens, outputTokens) {
+  const p = PRICES[model]
+  if (!p) return null
+  return (inputTokens / 1e6) * p.in + (outputTokens / 1e6) * p.out
+}
 
 // The swappable provider config. To add a provider, add another entry here.
 //
@@ -41,6 +75,8 @@ export const PROVIDERS = {
       model,
       stream: true,
       max_tokens: 4096,
+      // Ask the proxy to send a final usage event so we can show token counts.
+      stream_options: { include_usage: true },
       messages: [{ role: 'system', content: system }, ...messages],
     }),
   },
@@ -82,6 +118,7 @@ export const PROVIDERS = {
       model,
       stream: true,
       max_tokens: 4096,
+      stream_options: { include_usage: true },
       messages: [{ role: 'system', content: system }, ...messages],
     }),
   },
@@ -118,7 +155,8 @@ function looksLikeModelError(status, text) {
 
 // -----------------------------------------------------------------------------
 // streamChat: the core network call. Calls onToken(textChunk) repeatedly as the
-// reply streams in, and resolves with the FULL concatenated text at the end.
+// reply streams in, and resolves with { text, usage } where usage holds token
+// counts + an estimated/real cost so the UI can show "what did this cost me?".
 // -----------------------------------------------------------------------------
 export async function streamChat({
   providerName,
@@ -149,11 +187,22 @@ export async function streamChat({
     throw new Error(`API error ${res.status}: ${errText || res.statusText}`)
   }
 
+  // LiteLLM exposes the real per-request cost in a response header (when CORS
+  // allows reading it). We try; if missing we fall back to token math below.
+  let headerCost = null
+  const rawCost = res.headers.get('x-litellm-response-cost')
+  if (rawCost != null && rawCost !== '') {
+    const n = Number(rawCost)
+    if (!Number.isNaN(n)) headerCost = n
+  }
+
   // Read the streamed body chunk by chunk and split it into SSE "events".
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
   let full = ''
+  let inputTokens = 0
+  let outputTokens = 0
 
   while (true) {
     const { value, done } = await reader.read()
@@ -178,6 +227,20 @@ export async function streamChat({
             full += piece
             if (onToken) onToken(piece)
           }
+          // Capture token usage (shape differs per provider/format).
+          if (provider.format === 'anthropic') {
+            if (json.type === 'message_start' && json.message?.usage) {
+              inputTokens = json.message.usage.input_tokens || inputTokens
+              outputTokens = json.message.usage.output_tokens || outputTokens
+            }
+            if (json.type === 'message_delta' && json.usage) {
+              outputTokens = json.usage.output_tokens || outputTokens
+            }
+          } else if (json.usage) {
+            // OpenAI / LiteLLM final usage chunk.
+            inputTokens = json.usage.prompt_tokens || inputTokens
+            outputTokens = json.usage.completion_tokens || outputTokens
+          }
         } catch {
           // Ignore keep-alive comments / non-JSON lines.
         }
@@ -185,16 +248,25 @@ export async function streamChat({
     }
   }
 
-  return full
+  const totalTokens = inputTokens + outputTokens
+  const cost = headerCost != null ? headerCost : estimateCost(model, inputTokens, outputTokens)
+
+  return {
+    text: full,
+    usage: { model, inputTokens, outputTokens, totalTokens, cost },
+  }
 }
 
 // -----------------------------------------------------------------------------
 // generate: the function components actually call. It reads settings, picks the
-// right model ('premium' for lessons, 'cheap' for flashcards/quizzes), and on a
-// model error it auto-recovers by fetching the provider's current model list and
-// retrying once with a valid model.
+// right model ('premium' for lessons, 'cheap' for flashcards/quizzes), logs the
+// token/cost usage to IndexedDB, and on a model error auto-recovers by fetching
+// the provider's current model list and retrying once with a valid model.
+//
+// Returns { text, usage }. `label` is a short tag (e.g. "lesson:F3") stored with
+// the usage log so the Settings screen can break down spending.
 // -----------------------------------------------------------------------------
-export async function generate({ kind = 'premium', system, messages, onToken, signal }) {
+export async function generate({ kind = 'premium', system, messages, onToken, signal, label = '' }) {
   const settings = getSettings()
   const providerName = settings.provider
   const provider = PROVIDERS[providerName]
@@ -206,8 +278,14 @@ export async function generate({ kind = 'premium', system, messages, onToken, si
     return settings.premiumModel || provider.premiumModel
   }
 
+  // Record the usage to the on-device log (best-effort; never blocks the reply).
+  const logUsage = (usage) => {
+    if (!usage) return
+    addUsage({ ...usage, kind, label, at: Date.now() }).catch(() => {})
+  }
+
   try {
-    return await streamChat({
+    const result = await streamChat({
       providerName,
       apiKey: settings.apiKey,
       model: pickModel(),
@@ -216,6 +294,8 @@ export async function generate({ kind = 'premium', system, messages, onToken, si
       onToken,
       signal,
     })
+    logUsage(result.usage)
+    return result
   } catch (err) {
     if (err instanceof ModelNotFoundError) {
       // Recover: fetch the live model list, choose a sane replacement, persist
@@ -224,7 +304,7 @@ export async function generate({ kind = 'premium', system, messages, onToken, si
       if (replacement) {
         if (kind === 'cheap') saveSettings({ cheapModel: replacement })
         else saveSettings({ premiumModel: replacement })
-        return await streamChat({
+        const result = await streamChat({
           providerName,
           apiKey: settings.apiKey,
           model: replacement,
@@ -233,6 +313,8 @@ export async function generate({ kind = 'premium', system, messages, onToken, si
           onToken,
           signal,
         })
+        logUsage(result.usage)
+        return result
       }
     }
     throw err

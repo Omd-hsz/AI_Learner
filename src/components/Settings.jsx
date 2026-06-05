@@ -10,12 +10,19 @@
 import { useEffect, useState } from 'react'
 import { getSettings, saveSettings } from '../lib/storage.js'
 import { PROVIDERS, fetchModels } from '../lib/api.js'
-import { exportAll, importAll, resetAllData } from '../lib/db.js'
+import { exportAll, importAll, resetAllData, getUsageTotals, resetUsage } from '../lib/db.js'
+import { isTtsSupported, isSttSupported } from '../lib/speech.js'
 
 export default function Settings({ onBack, onChanged }) {
   const [settings, setSettings] = useState(getSettings())
   const [modelList, setModelList] = useState([]) // optional live model list
   const [status, setStatus] = useState('') // small feedback line
+  const [totals, setTotals] = useState(null) // usage/cost summary
+
+  // Load the running usage totals when the screen opens.
+  useEffect(() => {
+    getUsageTotals().then(setTotals)
+  }, [])
 
   // The provider object for the currently-selected provider.
   const provider = PROVIDERS[settings.provider]
@@ -109,6 +116,45 @@ export default function Settings({ onBack, onChanged }) {
       </section>
 
       <section className="setting-block">
+        <h2>Language & voice</h2>
+        <label>Language (UI + lessons)</label>
+        <select
+          value={settings.language}
+          onChange={(e) => update({ language: e.target.value })}
+        >
+          <option value="en">English</option>
+          <option value="fa">فارسی (Farsi)</option>
+        </select>
+
+        <label style={{ marginTop: 14 }}>
+          <input
+            type="checkbox"
+            checked={settings.voiceEnabled}
+            onChange={(e) => update({ voiceEnabled: e.target.checked })}
+            style={{ width: 'auto', marginInlineEnd: 8 }}
+          />
+          Enable voice tutor (free — uses your browser)
+        </label>
+
+        <label>Speaking speed: {Number(settings.voiceRate).toFixed(2)}×</label>
+        <input
+          type="range"
+          min="0.5"
+          max="1.75"
+          step="0.05"
+          value={settings.voiceRate}
+          onChange={(e) => update({ voiceRate: Number(e.target.value) })}
+        />
+        <p className="muted small">
+          Voice uses the browser's built-in Web Speech API — no API key, no cost.
+          {' '}
+          {isTtsSupported() ? 'Read-aloud: available.' : 'Read-aloud: not supported here.'}{' '}
+          {isSttSupported() ? 'Voice questions: available.' : 'Voice questions: not supported here (try Chrome).'}{' '}
+          Farsi voice quality depends on the voices installed on your device.
+        </p>
+      </section>
+
+      <section className="setting-block">
         <h2>Provider & models</h2>
         {settings.provider === 'litellm' && (
           <p className="muted small">
@@ -152,6 +198,38 @@ export default function Settings({ onBack, onChanged }) {
           Leave a model blank to use the provider default ({provider.premiumModel}{' '}
           / {provider.cheapModel}).
         </p>
+      </section>
+
+      <section className="setting-block">
+        <h2>Usage & cost</h2>
+        {totals ? (
+          <>
+            <p>
+              Total so far:{' '}
+              <strong>
+                {totals.costKnown ? `≈ $${totals.cost.toFixed(4)}` : `≈ $${totals.cost.toFixed(4)} (partial)`}
+              </strong>{' '}
+              · {totals.totalTokens.toLocaleString()} tokens · {totals.calls} API calls
+            </p>
+            {!totals.costKnown && (
+              <p className="muted small">
+                Some calls didn't report a price, so the real total may be a bit higher.
+              </p>
+            )}
+            <button
+              className="btn"
+              onClick={async () => {
+                await resetUsage()
+                setTotals(await getUsageTotals())
+                setStatus('Usage log cleared.')
+              }}
+            >
+              Clear usage log
+            </button>
+          </>
+        ) : (
+          <p className="muted">No usage recorded yet.</p>
+        )}
       </section>
 
       <section className="setting-block">

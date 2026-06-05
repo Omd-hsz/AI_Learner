@@ -12,13 +12,20 @@ import { useEffect, useMemo, useState } from 'react'
 import { generate } from '../lib/api.js'
 import { extractJsonObject } from '../lib/parse.js'
 import { STATUS, getAllProgress, addQuizScore, getAllQuizScores } from '../lib/db.js'
+import CostTag from './CostTag.jsx'
 
 // A focused system prompt: we want STRICT JSON so we can parse it reliably.
-const QUIZ_SYSTEM = `You are a quiz generator for retrieval practice. Write clear multiple-choice questions that test understanding (not trivia). Return ONLY valid JSON, no prose, in exactly this shape:
+function quizSystem(lang) {
+  const langLine =
+    lang === 'fa'
+      ? 'Write all question text, choices and explanations in fluent Persian (فارسی). Keep JSON keys in English.'
+      : 'Write everything in clear English.'
+  return `You are a quiz generator for retrieval practice. Write clear multiple-choice questions that test understanding (not trivia). ${langLine} Return ONLY valid JSON, no prose, in exactly this shape:
 {"questions":[{"q":"question text","choices":["A","B","C","D"],"answer":0,"explanation":"why the answer is correct"}]}
 "answer" is the 0-based index of the correct choice.`
+}
 
-export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
+export default function Quiz({ curriculum, hasKey, onNeedKey, onBack, lang = 'en' }) {
   const [phase, setPhase] = useState('idle') // idle | loading | active | done
   const [questions, setQuestions] = useState([])
   const [idx, setIdx] = useState(0)
@@ -26,6 +33,7 @@ export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
   const [score, setScore] = useState(0)
   const [error, setError] = useState('')
   const [history, setHistory] = useState([])
+  const [usage, setUsage] = useState(null)
 
   // Build a list of completed topics to quiz over.
   const [completedTopics, setCompletedTopics] = useState([])
@@ -63,12 +71,14 @@ export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
 
     let acc = ''
     try {
-      await generate({
+      const { usage: u } = await generate({
         kind: 'cheap', // quizzes use the cheap model
-        system: QUIZ_SYSTEM,
+        system: quizSystem(lang),
         messages: [userMsg],
+        label: 'quiz',
         onToken: (t) => (acc += t),
       })
+      setUsage(u)
       const parsed = extractJsonObject(acc)
       const qs = Array.isArray(parsed?.questions) ? parsed.questions : []
       if (!qs.length) throw new Error('The model did not return any questions. Try again.')
@@ -217,6 +227,7 @@ export default function Quiz({ curriculum, hasKey, onNeedKey, onBack }) {
           <button className="btn-primary" onClick={() => setPhase('idle')}>
             Back to quiz menu
           </button>
+          <CostTag usage={usage} lang={lang} />
         </div>
       )}
     </div>

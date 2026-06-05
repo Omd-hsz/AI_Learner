@@ -4,7 +4,7 @@
    Everything visual lives in this one file so it stays easy to tweak.
    --------------------------------------------------------------------------- */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Vazirmatn:wght@400;500;700&display=swap');
 
 :root {
   color-scheme: light only;
@@ -841,6 +841,103 @@ code {
 .settings h1 {
   font-size: 1.35rem;
   margin: 0 0 16px;
+}
+
+/* --- Small button variant ------------------------------------------------- */
+.btn-small {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+
+/* --- Home call-to-action + recommended topic ------------------------------ */
+.home-cta {
+  margin-top: 14px;
+}
+
+.topic-recommended {
+  border-color: var(--accent-dark);
+  background: #fbf3f6;
+}
+
+.recommend-tag {
+  margin-inline-start: 8px;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: var(--accent-dark);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+/* --- Voice tutor bar ------------------------------------------------------- */
+.voice-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 16px;
+  padding: 10px 12px;
+  background: #f0f4f4;
+  border: 1px solid #d6e2e2;
+  border-radius: var(--radius);
+}
+
+/* --- Cost tag (small footer) ---------------------------------------------- */
+.cost-tag {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  font-style: italic;
+  text-align: end;
+  opacity: 0.85;
+}
+
+/* --- Comprehension check block -------------------------------------------- */
+.comp-block {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--bg-soft2);
+}
+
+.comp-block h3 {
+  font-size: 1.02rem;
+  margin: 0 0 12px;
+}
+
+.next-row {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--bg-soft2);
+}
+
+/* --- RTL (Farsi) tweaks --------------------------------------------------- */
+[dir='rtl'] body {
+  font-family: 'Vazirmatn', 'DM Sans', Tahoma, system-ui, sans-serif;
+}
+
+[dir='rtl'] .topic-id {
+  font-variant-numeric: normal;
+}
+
+[dir='rtl'] .module {
+  border-left: none;
+  border-right: 4px solid var(--accent);
+}
+
+[dir='rtl'] .module-blue { border-right-color: #a8c4d4; }
+[dir='rtl'] .module-green { border-right-color: #b5d4b8; }
+[dir='rtl'] .module-yellow { border-right-color: #f0e0a8; }
+[dir='rtl'] .module-orange { border-right-color: #e8c4a8; }
+[dir='rtl'] .module-red { border-right-color: #e8b8b8; }
+[dir='rtl'] .module-purple { border-right-color: #c8b8d8; }
+
+[dir='rtl'] .bubble-assistant,
+[dir='rtl'] .markdown blockquote {
+  border-left: none;
+}
+
+[dir='rtl'] .btn-ghost {
+  padding-left: 14px;
+  padding-right: 0;
 }
 
 /* --- Responsive ----------------------------------------------------------- */

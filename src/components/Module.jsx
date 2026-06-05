@@ -77,13 +77,10 @@ export default function Module({
       })
     )
 
-    // Figure out which topics still need generation.
-    const missing = module.topics.filter((t) => !cached[t.id])
-    if (!missing.length) return
-
-    if (!hasKey) return // user will click "Generate all" manually
-
-    await generateMissing(missing, cached)
+    // We do NOT auto-generate every topic anymore (that wastes tokens and the
+    // learner usually wants to go lesson-by-lesson). Missing topics are shown
+    // with a per-topic "Open lesson" button, plus an explicit "Generate all
+    // missing" button for anyone who really wants the whole module at once.
   }
 
   async function generateMissing(missingList, alreadyCached = {}) {
