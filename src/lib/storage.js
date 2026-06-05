@@ -34,13 +34,21 @@ const DEFAULT_SETTINGS = {
   // instead of the robotic built-in browser voice. Falls back to the browser
   // voice automatically if the service is unavailable.
   aiVoice: true,
-  // Which TTS service: 'google' (Google Cloud Text-to-Speech, generous free
-  // tier, great Farsi support, own API key) or 'proxy' (the chat provider's
-  // OpenAI-compatible /v1/audio/speech — only works if the proxy exposes a TTS
-  // model, which the Divar LiteLLM proxy currently does NOT).
-  ttsProvider: 'google',
-  // Google Cloud TTS: a Google Cloud API key (separate from the chat key) and
-  // voice names per language. Empty voice name => Google auto-selects one.
+  // Which TTS service:
+  //  'gemini' — Google AI Studio (Gemini API) TTS. FREE, no credit card needed;
+  //             just an AI Studio key. Supports Persian. The recommended default.
+  //  'google' — Google Cloud Text-to-Speech. Higher quality/limits but needs a
+  //             Google Cloud billing account (credit card).
+  //  'proxy'  — the chat provider's OpenAI-compatible /v1/audio/speech (only
+  //             works if the proxy exposes a TTS model; the Divar one does NOT).
+  ttsProvider: 'gemini',
+  // Gemini (AI Studio) TTS: a free AI Studio API key + a prebuilt voice name.
+  // The model auto-detects the language from the text, so one voice covers both
+  // English and Farsi. Voices: Kore, Puck, Zephyr, Charon, Fenrir, Aoede, …
+  geminiTtsKey: '',
+  geminiVoice: 'Kore',
+  // Google Cloud TTS: a Google Cloud API key (needs billing) + per-language
+  // voice names. Empty voice name => Google auto-selects one.
   googleTtsKey: '',
   googleVoiceEn: 'en-US-Neural2-C', // realistic English neural voice
   googleVoiceFa: 'fa-IR-Standard-A', // Persian (Google has Standard fa-IR voices)

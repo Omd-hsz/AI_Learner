@@ -153,9 +153,42 @@ export default function Settings({ onBack, onChanged }) {
               value={settings.ttsProvider}
               onChange={(e) => update({ ttsProvider: e.target.value })}
             >
-              <option value="google">Google Cloud TTS (recommended)</option>
+              <option value="gemini">Google AI Studio / Gemini (free, no card)</option>
+              <option value="google">Google Cloud TTS (needs billing)</option>
               <option value="proxy">Chat provider TTS (OpenAI-style)</option>
             </select>
+
+            {settings.ttsProvider === 'gemini' && (
+              <>
+                <label>Google AI Studio API key</label>
+                <input
+                  type="password"
+                  value={settings.geminiTtsKey}
+                  onChange={(e) => update({ geminiTtsKey: e.target.value })}
+                  placeholder="AIza… (free key from aistudio.google.com)"
+                />
+                <label>Voice</label>
+                <select
+                  value={settings.geminiVoice}
+                  onChange={(e) => update({ geminiVoice: e.target.value })}
+                >
+                  <option value="Kore">Kore</option>
+                  <option value="Puck">Puck</option>
+                  <option value="Zephyr">Zephyr</option>
+                  <option value="Charon">Charon</option>
+                  <option value="Fenrir">Fenrir</option>
+                  <option value="Aoede">Aoede</option>
+                  <option value="Leda">Leda</option>
+                  <option value="Orus">Orus</option>
+                </select>
+                <p className="muted small">
+                  Free and no credit card: create a key at aistudio.google.com (Get
+                  API key). The voice auto-detects English vs Farsi from the text.
+                  Note: TTS uses preview models with tight free rate limits — if a
+                  call fails it falls back to the free browser voice.
+                </p>
+              </>
+            )}
 
             {settings.ttsProvider === 'google' && (
               <>

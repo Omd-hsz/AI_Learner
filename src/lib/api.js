@@ -401,6 +401,84 @@ export async function synthesizeSpeechGoogle({ text, languageCode = 'en-US', voi
   return new Blob([bytes], { type: 'audio/mpeg' })
 }
 
+// -----------------------------------------------------------------------------
+// synthesizeSpeechGemini: realistic Text-to-Speech via the Google AI Studio
+// (Gemini) API. This is the recommended FREE voice: an AI Studio key is free
+// and needs NO credit card, and the TTS models support Persian. The model
+// auto-detects the language from the text, so one voice handles English + Farsi.
+//
+// Gemini returns raw PCM audio (16-bit, mono, usually 24 kHz) as base64, NOT a
+// playable file — so we wrap it in a minimal WAV header here before returning a
+// Blob the <audio> element can play. Throws on error so the caller can fall back
+// to the browser voice. Note: TTS uses *preview* models with tight free limits.
+// -----------------------------------------------------------------------------
+
+// Build a little-endian WAV file (44-byte header + PCM) from 16-bit mono PCM.
+function pcmToWav(pcmBytes, sampleRate = 24000) {
+  const numChannels = 1
+  const bytesPerSample = 2
+  const dataLen = pcmBytes.length
+  const buffer = new ArrayBuffer(44 + dataLen)
+  const view = new DataView(buffer)
+  const writeStr = (offset, str) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i))
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataLen, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true) // PCM fmt chunk size
+  view.setUint16(20, 1, true) // audio format = PCM
+  view.setUint16(22, numChannels, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * numChannels * bytesPerSample, true) // byte rate
+  view.setUint16(32, numChannels * bytesPerSample, true) // block align
+  view.setUint16(34, 8 * bytesPerSample, true) // bits per sample
+  writeStr(36, 'data')
+  view.setUint32(40, dataLen, true)
+  new Uint8Array(buffer, 44).set(pcmBytes)
+  return new Blob([buffer], { type: 'audio/wav' })
+}
+
+export async function synthesizeSpeechGemini({ text, voiceName = 'Kore', signal } = {}) {
+  const settings = getSettings()
+  const key = settings.geminiTtsKey
+  if (!key) throw new Error('No Google AI Studio key set (Settings → AI voice).')
+
+  const model = 'gemini-2.5-flash-preview-tts'
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+          },
+        },
+      }),
+      signal,
+    },
+  )
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`Gemini TTS error ${res.status}: ${errText || res.statusText}`)
+  }
+  const json = await res.json()
+  const part = json?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)
+  const b64 = part?.inlineData?.data
+  if (!b64) throw new Error('Gemini TTS returned no audio (model/free-tier may be unavailable).')
+  // Decode base64 PCM and find the sample rate from the mime type (e.g.
+  // "audio/L16;codec=pcm;rate=24000"), defaulting to 24 kHz.
+  const pcm = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+  const rateMatch = /rate=(\d+)/.exec(part.inlineData.mimeType || '')
+  const sampleRate = rateMatch ? Number(rateMatch[1]) : 24000
+  return pcmToWav(pcm, sampleRate)
+}
+
 // Fetch the provider's current list of chat model IDs.
 // For LiteLLM we prefer /v1/model/info (includes mode=chat vs embedding).
 export async function fetchModels(providerName, apiKey) {

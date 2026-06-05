@@ -155,14 +155,20 @@ export function speakAI(markdown, { language = 'en', onEnd, onError } = {}) {
   ;(async () => {
     try {
       // Lazy import keeps speech.js loadable without fetch (e.g. in tests).
-      const { synthesizeSpeech, synthesizeSpeechGoogle } = await import('./api.js')
+      const { synthesizeSpeech, synthesizeSpeechGoogle, synthesizeSpeechGemini } =
+        await import('./api.js')
       const { getSettings } = await import('./storage.js')
       const s = getSettings()
-      const useGoogle = (s.ttsProvider || 'google') === 'google'
+      const provider = s.ttsProvider || 'gemini'
 
       // Synthesize one chunk to an audio Blob using the chosen TTS service.
       const synth = (chunk) => {
-        if (useGoogle) {
+        if (provider === 'gemini') {
+          // Gemini auto-detects the language from the text, so one voice covers
+          // both English and Farsi.
+          return synthesizeSpeechGemini({ text: chunk, voiceName: s.geminiVoice })
+        }
+        if (provider === 'google') {
           return synthesizeSpeechGoogle({
             text: chunk,
             languageCode: language === 'fa' ? 'fa-IR' : 'en-US',
