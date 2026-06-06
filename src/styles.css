@@ -4,7 +4,36 @@
    Everything visual lives in this one file so it stays easy to tweak.
    --------------------------------------------------------------------------- */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Vazirmatn:wght@400;500;700&display=swap');
+/* Latin fonts (DM Sans / Libre Baskerville) still come from Google. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* Vazirmatn (the Farsi font) is SELF-HOSTED so Persian renders correctly even
+   offline — this is an offline-first PWA, and the Google import silently fails
+   when offline/blocked, dropping Farsi to Tahoma. Files live in /public/fonts
+   and are precached by the service worker. Three weights match how the UI uses
+   them: 400 body, 500 medium, 700 headings/bold. `display: swap` shows text
+   immediately in the fallback, then swaps to Vazir once loaded. */
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Vazirmatn-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Vazirmatn-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Vazirmatn-Bold.woff2') format('woff2');
+}
 
 :root {
   color-scheme: light only;

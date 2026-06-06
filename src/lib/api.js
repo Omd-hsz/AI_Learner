@@ -23,6 +23,9 @@ export const PRICES = {
   'gemini-3-flash-preview': { in: 0.5, out: 3.0 },
   'gemini-2.5-pro': { in: 1.25, out: 10.0 },
   'gemini-3-pro-preview': { in: 2.0, out: 12.0 },
+  // Default premium model for lessons + placement test (see PROVIDERS.litellm).
+  // Price mirrors the other Gemini Pro tier; adjust if your proxy bills differently.
+  'gemini-3.1-pro': { in: 2.0, out: 12.0 },
   'grok-4-1-fast-non-reasoning': { in: 0.2, out: 0.5 },
   'grok-4-1-fast-reasoning': { in: 0.2, out: 0.5 },
   'grok-4-fast-non-reasoning': { in: 0.2, out: 0.5 },
@@ -61,9 +64,10 @@ export const PROVIDERS = {
     modelsUrl: 'https://litellm.data.divar.cloud/v1/models',
     modelInfoUrl: 'https://litellm.data.divar.cloud/v1/model/info',
     format: 'openai',
-    // gemini-2.5-flash: best price/quality for structured teaching (~$0.30/$2.50
-    // per 1M tokens on the team key — see server.py MODELS_TO_TEST).
-    premiumModel: 'gemini-2.5-flash',
+    // gemini-3.1-pro: the strongest Gemini on the key — used for lessons and the
+    // placement diagnostic, where reasoning quality matters most. If your proxy
+    // names it differently, change it here (or override in Settings → Models).
+    premiumModel: 'gemini-3.1-pro',
     // grok-4-1-fast-non-reasoning: cheapest chat model on the key (~$0.20/$0.50);
     // fine for short quiz/flashcard calls. Use gemini-2.5-flash if quality drops.
     cheapModel: 'grok-4-1-fast-non-reasoning',
@@ -74,7 +78,7 @@ export const PROVIDERS = {
     body: (system, messages, model) => ({
       model,
       stream: true,
-      max_tokens: 4096,
+      max_tokens: 8192, // ceiling, not target — fits 20-question placement + long lessons
       // Ask the proxy to send a final usage event so we can show token counts.
       stream_options: { include_usage: true },
       messages: [{ role: 'system', content: system }, ...messages],
@@ -96,7 +100,7 @@ export const PROVIDERS = {
     }),
     body: (system, messages, model) => ({
       model,
-      max_tokens: 4096,
+      max_tokens: 8192, // ceiling, not target — fits 20-question placement + long lessons
       system,
       messages,
       stream: true,
@@ -117,7 +121,7 @@ export const PROVIDERS = {
     body: (system, messages, model) => ({
       model,
       stream: true,
-      max_tokens: 4096,
+      max_tokens: 8192, // ceiling, not target — fits 20-question placement + long lessons
       stream_options: { include_usage: true },
       messages: [{ role: 'system', content: system }, ...messages],
     }),

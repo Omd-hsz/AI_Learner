@@ -6,7 +6,14 @@
 //   - recommends WHERE TO START (the earliest topic they got wrong)
 //   - writes a short knowledge summary into the profile so later lessons are
 //     personalized
-// It uses the CHEAP model and shows the cost at the end.
+//
+// It asks 20 PRACTICAL questions tagged by skill (concept / math / coding) so the
+// summary can tell later lessons which dimension to slow down on. Every question
+// also gets an "I don't know" option — an honest gap is more useful than a guess.
+//
+// It uses the PREMIUM model (the cheap model wrote low-quality, predictable
+// questions). To kill answer-position bias, we SHUFFLE each question's real
+// choices on-device and recompute the correct index before showing it.
 // -----------------------------------------------------------------------------
 import { useMemo, useState } from 'react'
 import { generate } from '../lib/api.js'
@@ -37,6 +44,34 @@ export default function Placement({ curriculum, hasKey, onNeedKey, onBack, onSta
     return map
   }, [orderedTopics])
 
+  // The label for the always-present honest "I don't know" choice.
+  const idkLabel = lang === 'fa' ? 'نمی‌دانم' : "I don't know"
+
+  // Take one model-written question and make it fair to display:
+  //  1. keep only its 4 real choices,
+  //  2. SHUFFLE them so the correct answer isn't stuck in one slot (kills the
+  //     "the answer is always option 2" bias the model tends to have),
+  //  3. recompute `answer` to point at the correct text's NEW position,
+  //  4. append the "I don't know" option as the last choice.
+  function prepareQuestion(q) {
+    const real = q.choices.slice(0, 4)
+    // Some models return the index as a string ("1"); coerce so it indexes right.
+    const ans = Number(q.answer)
+    const correctText = real[ans] ?? real[0]
+    const shuffled = [...real]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return {
+      ...q,
+      skill: q.skill || 'concept',
+      choices: [...shuffled, idkLabel],
+      answer: shuffled.indexOf(correctText),
+      idkIndex: shuffled.length, // the "I don't know" option, appended last
+    }
+  }
+
   async function startTest() {
     if (!hasKey) return onNeedKey()
     setError('')
@@ -44,14 +79,18 @@ export default function Placement({ curriculum, hasKey, onNeedKey, onBack, onSta
     let acc = ''
     try {
       const { usage: u } = await generate({
-        kind: 'cheap',
+        kind: 'premium',
         system: placementSystem(lang),
-        messages: [{ role: 'user', content: buildPlacementRequest(orderedTopics, 8) }],
+        messages: [{ role: 'user', content: buildPlacementRequest(orderedTopics, 20) }],
         label: 'placement',
         onToken: (tk) => (acc += tk),
       })
       const parsed = extractJsonObject(acc)
-      const qs = Array.isArray(parsed?.questions) ? parsed.questions : []
+      const raw = Array.isArray(parsed?.questions) ? parsed.questions : []
+      // Keep only well-formed questions, then make each one fair (shuffle + IDK).
+      const qs = raw
+        .filter((q) => q && Array.isArray(q.choices) && q.choices.length >= 2 && Number.isFinite(Number(q.answer)))
+        .map(prepareQuestion)
       if (!qs.length) throw new Error('The model did not return a test. Try again.')
       setUsage(u)
       setQuestions(qs)
@@ -69,7 +108,11 @@ export default function Placement({ curriculum, hasKey, onNeedKey, onBack, onSta
     if (picked !== null) return
     setPicked(choiceIdx)
     const q = questions[idx]
-    setAnswers((a) => [...a, { topicId: q.topicId, correct: choiceIdx === q.answer }])
+    const unknown = choiceIdx === q.idkIndex
+    setAnswers((a) => [
+      ...a,
+      { topicId: q.topicId, skill: q.skill || 'concept', correct: choiceIdx === q.answer, unknown },
+    ])
   }
 
   async function next() {
@@ -102,10 +145,26 @@ export default function Placement({ curriculum, hasKey, onNeedKey, onBack, onSta
         .slice(0, 8)
         .join('; ')
     const correctIds = answers.filter((a) => a.correct).map((a) => a.topicId)
+    const unknownIds = answers.filter((a) => a.unknown).map((a) => a.topicId)
+
+    // Per-skill breakdown (concept / math / coding) so lessons know which
+    // dimension to slow down on. e.g. "math 1/6" => go very slow on math.
+    const dimText = ['concept', 'math', 'coding']
+      .map((d) => {
+        const items = answers.filter((a) => a.skill === d)
+        if (!items.length) return null
+        return `${d} ${items.filter((a) => a.correct).length}/${items.length}`
+      })
+      .filter(Boolean)
+      .join(', ')
+
     const notes =
-      `Placement test: scored ${correctCount}/${total} → ${level}. ` +
-      `Answered correctly around: ${titlesFor(correctIds) || '—'}. ` +
-      `Needs work on: ${titlesFor(wrongIds) || '—'}.`
+      `Placement (20 practical Qs): ${correctCount}/${total} correct → ${level}. ` +
+      `By skill: ${dimText || '—'}. ` +
+      `Strong on: ${titlesFor(correctIds) || '—'}. ` +
+      `Needs work on: ${titlesFor(wrongIds) || '—'}. ` +
+      `Explicitly said "I don't know" on: ${titlesFor(unknownIds) || '—'} (real gaps — teach these from scratch). ` +
+      `Adapt by skill: if math is weak, slow down on math with tiny hand-computed numbers; if coding is strong, teach through code; pitch terminology to the concept score.`
 
     await saveProfile({
       level,
@@ -140,8 +199,8 @@ export default function Placement({ curriculum, hasKey, onNeedKey, onBack, onSta
         <div className="card">
           <p>
             {lang === 'fa'
-              ? 'یک آزمون کوتاه چهارگزینه‌ای بده تا بفهمیم از کجا شروع کنی و درس‌ها متناسب با سطح تو ساخته شوند.'
-              : 'Take a short 4-option diagnostic so we can find where to start and tailor every lesson to your level.'}
+              ? '۲۰ پرسش کاربردی که دانش، ریاضی و برنامه‌نویسی تو را می‌سنجند. هر سؤال گزینهٔ «نمی‌دانم» هم دارد — اگر نمی‌دانی همان را بزن؛ صادقانه بودن کمک می‌کند درس‌ها دقیق‌تر برای تو ساخته شوند.'
+              : '20 practical questions that gauge your AI knowledge, math, and coding. Every question has an "I don\'t know" option — use it honestly; real gaps help us tailor every lesson to you.'}
           </p>
           <button className="btn-primary" onClick={startTest}>
             {lang === 'fa' ? 'شروع آزمون تعیین سطح' : 'Start placement test'}
@@ -167,7 +226,8 @@ export default function Placement({ curriculum, hasKey, onNeedKey, onBack, onSta
               let cls = ''
               if (picked !== null) {
                 if (ci === current.answer) cls = 'choice-correct'
-                else if (ci === picked) cls = 'choice-wrong'
+                // Don't paint "I don't know" red — it's an honest answer, not wrong.
+                else if (ci === picked && picked !== current.idkIndex) cls = 'choice-wrong'
               }
               return (
                 <li key={ci}>
