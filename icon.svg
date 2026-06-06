@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- App icon — vintage pastel palette -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="48" fill="#faf6ef"/>
+  <rect x="24" y="24" width="464" height="464" rx="36" fill="none" stroke="#e6ddd0" stroke-width="4"/>
+  <!-- Open book -->
+  <path d="M128 160 L256 200 L384 160 L384 360 L256 320 L128 360 Z" fill="#f5eef2" stroke="#c9a8b8" stroke-width="6" stroke-linejoin="round"/>
+  <line x1="256" y1="200" x2="256" y2="320" stroke="#c9a8b8" stroke-width="4"/>
+  <!-- Decorative lines (text) -->
+  <line x1="168" y1="240" x2="228" y2="252" stroke="#a8c4c8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="168" y1="280" x2="220" y2="290" stroke="#b5cdb8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="284" y1="252" x2="344" y2="240" stroke="#a8c4c8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="292" y1="290" x2="344" y2="280" stroke="#b5cdb8" stroke-width="5" stroke-linecap="round"/>
+</svg>

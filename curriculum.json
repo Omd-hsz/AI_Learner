@@ -1,0 +1,144 @@
+{
+  "courseTitle": "AI Mastery: From Foundations to Advanced",
+  "templateMinutes": 30,
+  "modules": [
+    {
+      "id": "M0",
+      "title": "Module 0 — Scientific & Technical Foundations",
+      "color": "blue",
+      "topics": [
+        { "id": "F1", "title": "Why math matters in AI — a map of every branch", "foundation": true },
+        { "id": "F2", "title": "Variables, functions & graphs (f(x) as a machine)", "foundation": true },
+        { "id": "F3", "title": "Linear algebra 1: vectors — why AI represents everything as vectors", "foundation": true },
+        { "id": "F4", "title": "Linear algebra 2: matrices & operations", "foundation": true },
+        { "id": "F5", "title": "Linear algebra 3: dot products, distance & similarity", "foundation": true },
+        { "id": "F6", "title": "Calculus 1: slopes & derivatives (which way is downhill?)", "foundation": true },
+        { "id": "F7", "title": "Calculus 2: gradients & chain rule (backprop intuition)", "foundation": true },
+        { "id": "F8", "title": "Probability 1: chance, distributions, expectation", "foundation": true },
+        { "id": "F9", "title": "Probability 2: conditional probability & Bayes", "foundation": true },
+        { "id": "F10", "title": "Statistics essentials: mean, variance, normalization, correlation", "foundation": true },
+        { "id": "F11", "title": "How computers represent data: bits, floats, text", "foundation": true },
+        { "id": "F12", "title": "Algorithms & complexity (Big-O)", "foundation": true },
+        { "id": "F13", "title": "Core data structures: arrays, hashmaps, trees, graphs", "foundation": true },
+        { "id": "F14", "title": "Search & optimization basics", "foundation": true }
+      ]
+    },
+    {
+      "id": "M1",
+      "title": "Module 1 — Foundations & Mental Models",
+      "color": "green",
+      "topics": [
+        { "id": "1", "title": "What AI / ML / DL / GenAI actually are" },
+        { "id": "2", "title": "How a model learns — intuition behind training" },
+        { "id": "3", "title": "Data: features, labels, train/val/test splits" },
+        { "id": "4", "title": "Core ML tasks: classification, regression, clustering, generation" },
+        { "id": "5", "title": "What a model physically is (weights, parameters, architecture)" },
+        { "id": "6", "title": "Tokens, embeddings, and vectors" },
+        { "id": "7", "title": "Loss functions & optimization (gradient descent)" },
+        { "id": "8", "title": "Overfitting vs underfitting" },
+        { "id": "9", "title": "Bias, variance, and generalization" },
+        { "id": "10", "title": "The AI toolkit landscape: which tool when" }
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Module 2 — Talking to LLMs Like a Pro",
+      "color": "green",
+      "topics": [
+        { "id": "11", "title": "How LLMs work (next-token prediction, context windows)" },
+        { "id": "12", "title": "Anatomy of a great prompt" },
+        { "id": "13", "title": "Zero-shot, few-shot, chain-of-thought" },
+        { "id": "14", "title": "System vs user vs assistant turns" },
+        { "id": "15", "title": "Temperature, top-p, max tokens" },
+        { "id": "16", "title": "Prompt patterns: persona, recipe, template, flipped-interaction" },
+        { "id": "17", "title": "Reducing hallucinations & verifying claims" },
+        { "id": "18", "title": "Structured output (JSON, tables)" },
+        { "id": "19", "title": "Capabilities vs limitations of LLMs" },
+        { "id": "20", "title": "Context management: chunking, summarizing, memory" },
+        { "id": "21", "title": "Prompt debugging" },
+        { "id": "22", "title": "Comparing models (GPT, Claude, Llama, Gemini)" }
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Module 3 — AI for Coding & Productivity",
+      "color": "yellow",
+      "topics": [
+        { "id": "23", "title": "Using AI as a pair programmer" },
+        { "id": "24", "title": "The coding-vs-AI balance" },
+        { "id": "25", "title": "Prompting for code: specs, constraints, edge cases" },
+        { "id": "26", "title": "Reading & verifying AI-generated code safely" },
+        { "id": "27", "title": "Debugging with AI" },
+        { "id": "28", "title": "Refactoring & code review with AI" },
+        { "id": "29", "title": "AI for testing" },
+        { "id": "30", "title": "AI for documentation & explaining legacy code" },
+        { "id": "31", "title": "Building with AI APIs (calling an LLM from code)" },
+        { "id": "32", "title": "Cost, latency & efficiency in AI apps" }
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Module 4 — Core ML Hands-On",
+      "color": "yellow",
+      "topics": [
+        { "id": "33", "title": "First model: linear regression from scratch" },
+        { "id": "34", "title": "Logistic regression & classification" },
+        { "id": "35", "title": "Decision trees & random forests" },
+        { "id": "36", "title": "Feature engineering & preprocessing" },
+        { "id": "37", "title": "Evaluation metrics (accuracy, precision, recall, F1, ROC-AUC)" },
+        { "id": "38", "title": "The full ML workflow" },
+        { "id": "39", "title": "Using scikit-learn effectively" },
+        { "id": "40", "title": "Cross-validation & hyperparameter tuning" },
+        { "id": "41", "title": "Handling imbalanced & messy data" },
+        { "id": "42", "title": "Intro to neural networks" },
+        { "id": "43", "title": "Training a neural net in PyTorch" },
+        { "id": "44", "title": "Avoiding common training failures" }
+      ]
+    },
+    {
+      "id": "M5",
+      "title": "Module 5 — Modern AI Deep Dive",
+      "color": "orange",
+      "topics": [
+        { "id": "45", "title": "How transformers work (attention explained)" },
+        { "id": "46", "title": "Pretraining vs fine-tuning vs RAG" },
+        { "id": "47", "title": "Fine-tuning a model" },
+        { "id": "48", "title": "Embeddings & vector databases in depth" },
+        { "id": "49", "title": "RAG — build one" },
+        { "id": "50", "title": "AI agents & tool use (function calling, ReAct)" },
+        { "id": "51", "title": "Multimodal models" },
+        { "id": "52", "title": "Image generation (diffusion intuition)" },
+        { "id": "53", "title": "Evaluating GenAI quality" },
+        { "id": "54", "title": "Quantization, distillation & running models locally" }
+      ]
+    },
+    {
+      "id": "M6",
+      "title": "Module 6 — Advanced, Efficiency & Mastery",
+      "color": "red",
+      "topics": [
+        { "id": "55", "title": "Prompt engineering at scale" },
+        { "id": "56", "title": "Efficiency: caching, batching, smaller models" },
+        { "id": "57", "title": "AI safety, ethics, security (prompt injection)" },
+        { "id": "58", "title": "MLOps basics: deploy, monitor, retrain" },
+        { "id": "59", "title": "Staying current: reading papers, evaluating tools" },
+        { "id": "60", "title": "Capstone: end-to-end AI project" }
+      ]
+    },
+    {
+      "id": "M7",
+      "title": "Module 7 — AI-Assisted Workflow & Tooling",
+      "color": "purple",
+      "topics": [
+        { "id": "W1", "title": "Markdown mastery — docs, READMEs, notes & prompts" },
+        { "id": "W2", "title": "AI context & rules files (CLAUDE.md, .cursorrules, AGENTS.md)" },
+        { "id": "W3", "title": "Linters & formatters (ESLint, Prettier, Ruff, Black)" },
+        { "id": "W4", "title": "The AI + linter + test feedback loop" },
+        { "id": "W5", "title": "Git & version control with AI" },
+        { "id": "W6", "title": "Building a personal prompt library" },
+        { "id": "W7", "title": "Token & context economy — more output for less cost" },
+        { "id": "W8", "title": "Model-operator skills — right model, right task" }
+      ]
+    }
+  ]
+}

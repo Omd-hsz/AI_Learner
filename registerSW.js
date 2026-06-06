@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/AI_Learner/sw.js', { scope: '/AI_Learner/' })})}
