@@ -968,10 +968,15 @@ code {
 }
 
 /* The serif heading font (Libre Baskerville) has no Persian glyphs, so in RTL
-   headings and table headers fall back to Vazir for correct, readable Farsi. */
-[dir='rtl'] .markdown h1,
-[dir='rtl'] .markdown h2,
-[dir='rtl'] .markdown h3,
+   EVERY heading (both app-chrome headings like the Placement title AND markdown
+   headings/table headers) must use Vazir, otherwise the browser falls back to a
+   system serif and Farsi looks wrong. This covers all h1–h6, not just .markdown. */
+[dir='rtl'] h1,
+[dir='rtl'] h2,
+[dir='rtl'] h3,
+[dir='rtl'] h4,
+[dir='rtl'] h5,
+[dir='rtl'] h6,
 [dir='rtl'] .markdown th {
   font-family: 'Vazirmatn', Tahoma, system-ui, sans-serif;
 }
