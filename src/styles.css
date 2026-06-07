@@ -963,22 +963,15 @@ code {
 }
 
 /* --- RTL (Farsi) tweaks --------------------------------------------------- */
-[dir='rtl'] body {
-  font-family: 'Vazirmatn', 'DM Sans', Tahoma, system-ui, sans-serif;
-}
-
-/* The serif heading font (Libre Baskerville) has no Persian glyphs, so in RTL
-   EVERY heading (both app-chrome headings like the Placement title AND markdown
-   headings/table headers) must use Vazir, otherwise the browser falls back to a
-   system serif and Farsi looks wrong. This covers all h1–h6, not just .markdown. */
-[dir='rtl'] h1,
-[dir='rtl'] h2,
-[dir='rtl'] h3,
-[dir='rtl'] h4,
-[dir='rtl'] h5,
-[dir='rtl'] h6,
-[dir='rtl'] .markdown th {
-  font-family: 'Vazirmatn', Tahoma, system-ui, sans-serif;
+/* Neither the Latin sans (DM Sans) nor the serif (Libre Baskerville) has Persian
+   glyphs, so under RTL we REDEFINE both font variables to Vazir. Because every
+   element — body, buttons, inputs, cards, headings, markdown — uses these two
+   variables, this one override forces correct Farsi everywhere. (Elements with
+   their OWN font-family rule, like `button`, still read var(--font-sans), so they
+   are covered too.) Keep DM Sans as a fallback so Latin/numeric text stays crisp. */
+[dir='rtl'] {
+  --font-sans: 'Vazirmatn', 'DM Sans', Tahoma, system-ui, sans-serif;
+  --font-serif: 'Vazirmatn', Tahoma, Georgia, system-ui, serif;
 }
 
 /* Charts inherit the page font; force Vazir on their SVG text under RTL. */
