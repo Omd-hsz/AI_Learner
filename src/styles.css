@@ -121,6 +121,19 @@ input, textarea, select { font-family: var(--font-sans); }
   color: var(--text);
   font-size: 1.15rem;
   padding: 0;
+  /* logo + wordmark sit on one line */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.08em;
+}
+
+/* The owl seal next to the KNO wordmark in the top bar. */
+.brand-logo {
+  height: 30px;
+  width: 30px;
+  object-fit: contain;
+  border-radius: 50%;
 }
 
 .nav-links {

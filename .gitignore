@@ -17,3 +17,6 @@ dist-ssr/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+# Logo source image (public/ icons are generated from it)
+kno-logo.png

@@ -130,7 +130,9 @@ export default function App() {
       {/* Top navigation bar, always visible. */}
       <nav className="nav">
         <button className="brand" onClick={() => { setModule(null); setView('home') }}>
-          AI Learning Companion
+          {/* BASE_URL keeps the logo path correct under the GitHub Pages subpath. */}
+          <img className="brand-logo" src={`${import.meta.env.BASE_URL}brand-logo.png`} alt="" />
+          KNO
         </button>
         <div className="nav-links">
           <button className={navCls(view, 'home')} onClick={() => setView('home')}>
